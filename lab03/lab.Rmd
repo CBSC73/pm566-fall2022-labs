@@ -2,7 +2,7 @@
 title: "Lab 03"
 author: "CB"
 date: "`r Sys.Date()`"
-output: html_document
+output: github_document "always_allow_html: true"
 ---
 
 ```{r setup, include=FALSE}
@@ -56,9 +56,66 @@ summary(met$wind.sp)
 met[met$elev==9999.0] <- NA
 summary(met$elev)
 ```
+# Remove likely error minimum temperatures 
+```{r}
+met <- met[temp>-40]
+met2 <- met[order(temp)]
+head(met2)
+```
+```{r}
+met <- met[temp>-15]
+met2 <- met[order(temp)]
+head(met2)
+```
 
 
 The weather station with the highest elevation is at `r max(met$elev, na.rm=TRUE)` meters
+
+#Setp 6 Calculate Summary statistics 
+```{r}
+elev <- met[elev==max(elev)]
+summary(elev)
+```
+#Correlations
+```{r}
+cor(elev$temp, elev$wind.sp, use="complete")
+```
+```{r}
+cor(elev$temp, elev$hour, use="complete")
+```
+```{r}
+cor(elev$wind.sp, elev$day, use="complete")
+```
+```{r}
+cor(elev$wind.sp, elev$hour, use="complete")
+```
+```{r}
+cor(elev$temp, elev$day, use="complete")
+```
+#Step 7 Exploratory Graphs
+```{r}
+hist(met$elev, breaks=100)
+```
+
+```{r}
+hist(met$temp)
+hist(met$wind.sp)
+```
+
+```{r}
+library(leaflet)
+```
+
+
+```{r}
+elev<-met[elev==max(elev)]
+```
+
+```{r}
+leaflet(elev) %>%
+  addProviderTiles('OpenStreetMap') %>% 
+  addCircles(lat=~lat,lng=~lon, opacity=1, fillOpacity=1, radius=100)
+```
 
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
