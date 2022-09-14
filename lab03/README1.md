@@ -17,7 +17,7 @@ download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/m
 met <- data.table::fread("met_all.gz")
 ```
 
-\##Step 2 . Check the dimensions, headers, footers. How many columns,
+\##Step 2  Check the dimensions, headers, footers. How many columns,
 rows are there?
 
 ``` r
