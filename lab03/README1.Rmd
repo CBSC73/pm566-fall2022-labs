@@ -1,9 +1,14 @@
-Lab 03
-================
-CB
-`r Sys.Date()`
-
-`{r setup, include=FALSE} knitr::opts_chunk$set(echo = TRUE)`
+---
+title: "Lab 03"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+```
+{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 ## R Markdown
 
@@ -16,7 +21,7 @@ download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/m
 met <- data.table::fread("met_all.gz")
 ```
 
-\##Step 2 . Check the dimensions, headeres, footers. How many columns,
+\##Step 2 . Check the dimensions, headers, footers. How many columns,
 rows are there?
 
 ``` {r}
@@ -81,14 +86,14 @@ head(met2)
 The weather station with the highest elevation is at
 `r max(met$elev, na.rm=TRUE)` meters
 
-\#Setp 6 Calculate Summary statistics
+# Step 6 Calculate Summary statistics
 
 ``` {r}
 elev <- met[elev==max(elev)]
 summary(elev)
 ```
 
-\#Correlations
+# Correlations
 
 ``` {r}
 cor(elev$temp, elev$wind.sp, use="complete")
@@ -110,7 +115,7 @@ cor(elev$wind.sp, elev$hour, use="complete")
 cor(elev$temp, elev$day, use="complete")
 ```
 
-\#Step 7 Exploratory Graphs
+# Step 7 Exploratory Graphs
 
 ``` {r}
 hist(met$elev, breaks=100)
@@ -146,22 +151,12 @@ head(elev)
 plot(elev$date, elev$temp, type='l')
 plot(elev$date, elev$wind.sp, type='l')
 ```
+```{r}
 
-This is an R Markdown document. Markdown is a simple formatting syntax
-for authoring HTML, PDF, and MS Word documents. For more details on
-using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that
-includes both content as well as the output of any embedded R code
-chunks within the document. You can embed an R code chunk like this:
+library(leaflet)
 
-`{r cars} summary(cars)`
+library(webshot)
+```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-`{r pressure, echo=FALSE} plot(pressure)`
-
-Note that the `echo = FALSE` parameter was added to the code chunk to
-prevent printing of the R code that generated the plot.
