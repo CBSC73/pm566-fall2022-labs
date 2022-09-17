@@ -152,14 +152,14 @@ met_avg[!is.na(dew.point)] %>%
     stat_summary(fun.data = mean_sdl, geom = "errorbar") 
 ```
 
-#There is a wider distribution of values for the West vs East sides of the US
+# There is a wider distribution of values for the West vs East sides of the US
 
 ## Step 7 Make map showing the spatial trend in relative humidity in the US
 ```{r}
 library(leaflet)
 ```
 
-#Generate color palette
+# Generate color palette
 ```{r}
 rh.pal <- colorNumeric(c('darkgreen','goldenrod','brown'), domain=met_avg$rh)
 rh.pal
