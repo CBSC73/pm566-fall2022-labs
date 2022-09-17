@@ -1,0 +1,191 @@
+---
+title: "Lab 04"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+#Load required libraries
+```{r}
+library(data.table)
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+```
+
+
+## Step 1 Read in the data from last week's lab
+```{r}
+if (!file.exists("met_all.gz")) {
+download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz", "met_all.gz", method="libcurl", timeout = 60)
+}
+met <- data.table::fread("met_all.gz")
+
+```
+## Step 2 Prep data -- Remove Temps less than -17C and check data with head command
+
+```{r}
+met <- met[temp>-17]
+met2 <- met[order(temp)]
+head(met2)
+```
+# Replace missing values 9999 with “NA”
+
+``` {r}
+met[met$elev==9999.0] <- NA
+summary(met$elev)
+```
+# Generate a date variable 
+
+```{r create-ymd, cache=TRUE}
+
+met <- met[ ,ymd :=as.Date(paste(year, month, day, sep = "-"))]
+
+```
+## Keep observations from first week of the month
+
+```{r}
+
+
+met[, table(week(ymd))]
+met <- met[ week(ymd) == 31 ]
+```
+
+
+## Check that max values are true (and not 9999)
+```{r check max}
+met[, .(
+  temp      = max(temp,na.rm=T),
+  rh        = max(rh,na.rm=T), 
+  wind.sp   = max(wind.sp,na.rm=T), 
+  vis.dist  = max(vis.dist,na.rm=T), 
+  dew.point = max(dew.point,na.rm=T), 
+  lat       = max(lat,na.rm=T), 
+  lon       = max(lon,na.rm=T), 
+  elev      = max(elev,na.rm=T)
+)]
+```
+## Find averages for each variable by station
+```{r check avg}
+met_avg <- met[, .(
+  temp      = mean(temp,na.rm=T),
+  rh        = mean(rh,na.rm=T), 
+  wind.sp   = mean(wind.sp,na.rm=T), 
+  vis.dist  = mean(vis.dist,na.rm=T), 
+  dew.point = mean(dew.point,na.rm=T), 
+  lat       = mean(lat,na.rm=T), 
+  lon       = mean(lon,na.rm=T), 
+  elev      = mean(elev,na.rm=T)
+), by = "USAFID"]
+```
+
+## Create region variables 
+```{r}
+met_avg[, region := fifelse(lon >= -98 & lat > 39.71, "NE",
+                fifelse(lon < -98 & lat > 39.71, "NW",
+                fifelse(lon < -98 & lat <= 39.71, "SW","SE")))
+    ]
+table(met_avg$region)
+
+```
+## Create categorical variable for elevation
+```{r}
+met_avg[, elev_cat := fifelse(elev > 252, "high", "low")]
+```
+
+
+
+## Make Violin plots - dewpoint
+```{r}
+met_avg[!is.na(region)] %>%
+  
+  ggplot() + 
+  geom_violin(mapping = aes(x = 1, y = dew.point,  color=region, fill = region)) + 
+  facet_wrap(~ region, nrow = 1)
+```
+# _southeast has highest dewpoint_
+
+# Violin plot wind speed
+```{r}
+met_avg[!is.na(region) & !is.na(wind.sp)] %>% 
+  ggplot() + 
+  geom_violin(mapping = aes(x = 1, y = wind.sp,  color=region, fill = region)) + 
+  facet_wrap(~ region, nrow = 2)
+
+```
+# _highest wind speeds in the Southwest with a bimodal distribution_
+
+#Step 4 Examine association between dew point temperature and wind speed by region
+```{r}
+met_avg[!is.na(region) & !is.na(wind.sp)] %>% 
+  ggplot(mapping = aes(x = wind.sp, y = dew.point)) + 
+  geom_point(mapping = aes(color = region)) + 
+  geom_smooth(method = lm, mapping = aes(linetype = region)) +
+  facet_wrap(~ region, nrow = 2)
+```
+# _Only in the southwest is the dewpoint decreasing as wind speed increases_
+
+
+##Step 5 Use geom_bar to create barplots of the weather stations by elevation category coloured by region
+```{r}
+met_avg[!is.na(elev_cat) & !is.na(region)]%>% #Remove missing values for these variables
+ggplot(met_avg, mapping=aes(x=region, fill=elev_cat))+
+  geom_bar(color="black", position="dodge") + scale_fill_brewer(palette="Greens")+
+    labs(title="Weather Station Elevation by Region", x="Region", y="Number of Stations")
+             
+  
+```
+#The Southweast is the lowest elevation area by quite a bit. The Northwest has very minimal low elevation areas.
+
+
+## Step 6 examined mean dew point and wind speed by region using SD error bars
+```{r}
+met_avg[!is.na(dew.point)] %>%
+  ggplot(mapping = aes(x = region, y = dew.point)) + 
+    stat_summary(fun.data = mean_sdl, geom = "pointrange") +
+    stat_summary(fun.data = mean_sdl, geom = "errorbar") 
+```
+
+#There is a wider distribution of values for the West vs East sides of the US
+
+## Step 7 Make map showing the spatial trend in relative humidity in the US
+```{r}
+library(leaflet)
+```
+
+#Generate color palette
+```{r}
+rh.pal <- colorNumeric(c('darkgreen','goldenrod','brown'), domain=met_avg$rh)
+rh.pal
+```
+
+
+#Generate map
+```{r}
+top10rh <-met_avg[rank (-rh) <=10]
+```
+```{r}
+rhmap <- leaflet(met_avg) %>% 
+
+  addProviderTiles('CartoDB.Positron') %>% 
+
+  addCircles(
+    lat = ~lat, lng=~lon,
+                                                
+    label = ~paste0(rh), color = ~ rh.pal(rh),
+    opacity = 1, fillOpacity = 1, radius = 500
+    ) %>%
+
+  addLegend('bottomleft', pal=rh.pal, values=met_avg$rh,
+          title='Relative Humidity', opacity=1)
+rhmap
+```
+
+
+#It is more humid in the Eastern US vs Western. Perhaps the West coast humidity is areas like the Coastal Redwood forests?
