@@ -53,4 +53,45 @@ specialties %>%
   ggplot (aes(x=n, y=fct_reorder(medical_specialty,n)))+
   geom_col()
 ```
+# Tokenize in transcription column and count number of times top 20 words appear
+```{r}
+library(tidytext)
+mts %>%
+  unnest_tokens(word,transcription) %>% 
+   count(word, sort=TRUE) %>% 
+    top_n(20, n)
+  
+```
+#_Lots of stop words, so we do not get much information from this._
+
+## Question 3
+
+#Remove stop words
+```{r}
+mts %>%
+  unnest_tokens(word, transcription) %>%
+  anti_join(stop_words, by = c("word")) %>%
+  count(word, sort = TRUE) %>% 
+  top_n(20, n) %>% 
+  ggplot(aes(n, fct_reorder(word, n))) +
+  geom_col()
+```
+
+#_Lots of numbers here_, remove these._
+
+```{r}
+mts %>%
+  unnest_tokens(word, transcription) %>%
+  count(word, sort = TRUE) %>%
+  anti_join(stop_words, by = c("word")) %>%
+  
+  filter( !grepl(pattern = "^[0-9]+$", x = word)) %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, fct_reorder(word, n))) +
+  geom_col()
+```
+
+#_Now the numbers are gone, the words are much more useful to determine what text is about_
+
+## Question 4
 

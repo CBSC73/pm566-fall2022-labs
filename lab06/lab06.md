@@ -157,4 +157,76 @@ specialties %>%
 
     ## Selecting by n
 
-![](lab06_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](lab06_files/figure-gfm/unnamed-chunk-7-1.png)<!-- --> \# Tokenize in
+transcription column and count number of times top 20 words appear
+
+``` r
+library(tidytext)
+mts %>%
+  unnest_tokens(word,transcription) %>% 
+   count(word, sort=TRUE) %>% 
+    top_n(20, n)
+```
+
+    ## # A tibble: 20 × 2
+    ##    word         n
+    ##    <chr>    <int>
+    ##  1 the     149888
+    ##  2 and      82779
+    ##  3 was      71765
+    ##  4 of       59205
+    ##  5 to       50632
+    ##  6 a        42810
+    ##  7 with     35815
+    ##  8 in       32807
+    ##  9 is       26378
+    ## 10 patient  22065
+    ## 11 no       17874
+    ## 12 she      17593
+    ## 13 for      17049
+    ## 14 he       15542
+    ## 15 were     15535
+    ## 16 on       14694
+    ## 17 this     13949
+    ## 18 at       13492
+    ## 19 then     12430
+    ## 20 right    11587
+
+\#*Lots of stop words, so we do not get much information from this.*
+
+## Question 3
+
+\#Remove stop words
+
+``` r
+mts %>%
+  unnest_tokens(word, transcription) %>%
+  anti_join(stop_words, by = c("word")) %>%
+  count(word, sort = TRUE) %>% 
+  top_n(20, n) %>% 
+  ggplot(aes(n, fct_reorder(word, n))) +
+  geom_col()
+```
+
+![](lab06_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+\#*Lots of numbers here*, remove these.\_
+
+``` r
+mts %>%
+  unnest_tokens(word, transcription) %>%
+  count(word, sort = TRUE) %>%
+  anti_join(stop_words, by = c("word")) %>%
+  
+  filter( !grepl(pattern = "^[0-9]+$", x = word)) %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, fct_reorder(word, n))) +
+  geom_col()
+```
+
+![](lab06_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+\#*Now the numbers are gone, the words are much more useful to determine
+what text is about*
+
+## Question 4
