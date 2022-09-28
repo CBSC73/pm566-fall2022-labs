@@ -1,0 +1,56 @@
+---
+title: "Lab 06"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, eval=FALSE, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+#Load required libraries
+```{r}
+library(tidytext)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(forcats)
+
+```
+#Load in data
+```{r}
+download.file("https://raw.githubusercontent.com//USCbiostats//data-science-data//master//00_mtsamples//mtsamples.csv", "mtsamples.csv", method="libcurl", timeout=60)
+```
+```{r}
+
+mts<-read.csv("mtsamples.csv")
+dim(mts)
+str(mts)
+mts<-as_tibble(mts)
+mts
+```
+#Question 1: What specialties do we have and how many of each are there in the dataset?
+We can use count() from dplyr"
+```{r}
+mts %>% count(medical_specialty)
+```
+#_The specialties are definitely overlapping. For instance there is surgery in addition to urology which is a surgical subspecialty. They are not evenly distributed, some categories have more than 1000 entries and others <10)_
+```{r}
+colnames(mts)
+```
+
+```{r}
+specialties<-mts %>% count(medical_specialty)
+specialties %>% arrange(desc(n))
+```
+```{r}
+#Make a barplot of specialty counts
+specialties %>% 
+  top_n(10) %>% 
+  ggplot (aes(x=n, y=fct_reorder(medical_specialty,n)))+
+  geom_col()
+```
+
