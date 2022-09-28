@@ -158,4 +158,4 @@ ptbigram %>%
 ```
 
 
-#_The top 5 most words by medical specialty are above. Some of these are amusing! Neonatal medicine uses "mom" a lot, I thought it would be "baby" or "mother" before "mom"._
+#_The top 5 most words by medical specialty are above. Some of these are amusing! Neonatal medicine uses "mom" frequently, I thought it would be "baby" or "mother" before "mom"._

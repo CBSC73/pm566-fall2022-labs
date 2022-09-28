@@ -590,5 +590,5 @@ within each specialty. Remember to remove stopwords. How about the most
 | Urology                       | history      |  196 |
 
 \#*The top 5 most words by medical specialty are above. Some of these
-are amusing! Neonatal medicine uses “mom” a lot, I thought it would be
-“baby” or “mother” before “mom”.*
+are amusing! Neonatal medicine uses “mom” frequently, I thought it would
+be “baby” or “mother” before “mom”.*
