@@ -1,0 +1,63 @@
+---
+title: "Homework 2"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+#Load required libraries
+```{r}
+library(data.table)
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+library(dtplyr)
+```
+#Load in data from github
+```{r}
+download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/01_chs/chs_individual.csv", "individual.gz", method="libcurl", timeout = 60)
+
+individual <- data.table::fread("individual.gz")
+
+download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/01_chs/chs_regional.csv", "regional.gz", method="libcurl", timeout = 60)
+
+regional <- data.table::fread("regional.gz")
+  
+```
+```{r}
+dim(individual)
+head(individual)
+```
+```{r}
+head(regional)
+#Trim down this dataset so it just has the info we are going to use (PM2.5 data and location for the leaflet)
+regional_trim <- regional[, c("townname", "pm25_mass", "lon", "lat")]
+regional_trim
+
+```
+#How many unique townnames are there? 
+```{r}
+unique(individual$townname)
+unique(regional_trim$townname)
+```
+
+#Check variables for merging. There are 12 unique townnames. This matches with the 12 rows from the regional dataset. 
+#Merge data
+```{r}
+hw2data <-merge(individual, regional_trim, by="townname" )
+dim(hw2data)
+```
+
+#_This looks correct, there are 1200 rows and now the three additional columns added in the regional (trimmed) dataset
+```{r}
+head(hw2data)
+tail(hw2data)
+```
+
