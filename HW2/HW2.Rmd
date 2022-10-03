@@ -60,4 +60,41 @@ dim(hw2data)
 head(hw2data)
 tail(hw2data)
 ```
+#Which variables have missing values?
+```{r}
+colSums(is.na(hw2data))
+```
+
+
+#For missing values, impute data using the average within the variables “male” and “hispanic.” For variables with 0/1 values will impute with the median.
+
+```
+```{r}
+#Impute variables with missing values using mean or mode grouped by sex/hispanic
+
+hw2data[, bmi_imp := fcoalesce(bmi, mean(bmi, na.rm = T)),
+    by = .(male, hispanic)]
+
+
+hw2data[, fev_imp := (fcoalesce(fev, mean(fev, na.rm = T))),
+    by = .(male, hispanic)]
+
+#Create another smoke and gasstove variable that is numeric so it can be imputed
+
+hw2data [ , smoke_num := (as.numeric(smoke, na.rm=F))]
+hw2data [ , gasstove_num := (as.numeric(gasstove, na.rm=F))]
+
+#Now try imputation again
+
+hw2data[, smoke_imp := (fcoalesce(smoke_num, median(smoke_num, na.rm = T))),
+    by = .(male, hispanic)]
+
+hw2data[, gasstove_imp := (fcoalesce(gasstove_num, median(gasstove_num, na.rm = T))),
+    by = .(male, hispanic)]
+
+
+```
+
+# This worked. Now my dataset has the imputed variables in place. 
+
 
