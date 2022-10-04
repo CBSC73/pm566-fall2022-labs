@@ -19,6 +19,7 @@ library(lubridate)
 library(dplyr)
 library(tidyverse)
 library(dtplyr)
+library(knitr)
 ```
 #Load in data from github
 ```{r}
@@ -110,9 +111,9 @@ head(hw2data)
 #Create a new categorical variable named “obesity_level” using the BMI measurement (underweight BMI<14; normal BMI 14-22; overweight BMI 22-24; obese BMI>24). To make sure the variable is rightly coded, create a summary table that contains the minimum BMI, maximum BMI, and the total number of observations per category.
 
 ```{r}
-hw2data[, obesity_level := fifelse(bmi_imp < 14, "underweight", 
-                fifelse(bmi_imp >= 14 & bmi_imp <22, "normal",
-                fifelse(bmi_imp >=22 & bmi_imp <24, "overweight", "obese")))]
+hw2data[, obesity_level := fifelse(bmi_imp < 14, "Underweight", 
+                fifelse(bmi_imp >= 14 & bmi_imp <22, "Normal",
+                fifelse(bmi_imp >=22 & bmi_imp <24, "Overweight", "Obese")))]
 
 #Make sure categories look ok
 table(hw2data$obesity_level)
@@ -132,29 +133,93 @@ hw2data %>%
 # Create another categorical variable named “smoke_gas_exposure” that summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have four categories in total.
 
 ```{r}
-hw2data[, smoke_gas_exposure := fifelse(smoke_imp ==0 & gasstove_imp ==0, "none", 
-                fifelse(smoke_imp ==1 & gasstove_imp ==0, "smoke_only",
-                fifelse(smoke_imp ==0 & gasstove_imp ==1, "stove_only", "both")))]
+hw2data[, smoke_gas_exposure := fifelse(smoke_imp ==0 & gasstove_imp ==0, "None", 
+                fifelse(smoke_imp ==1 & gasstove_imp ==0, "Smoke Only",
+                fifelse(smoke_imp ==0 & gasstove_imp ==1, "Stove Only", "Both")))]
 
 table(hw2data$smoke_gas_exposure)
 ```
-## Step 4
+## Step 4 Create Summary tables
 
 # Create four summary tables showing the average (or proportion, if binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma indicator by town, sex, obesity level, and “smoke_gas_exposure.”
 
 ```{r}
+#Table 1
 Table_Town = hw2data %>% 
   group_by(townname) %>% 
           summarise(sum(asthma_imp==1)/n()*100,
           mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
 
-Table_Town
 
-#Change column and row names
-colnames(Table_Town) = c("Town Name", "Asthma Present (%)", "Mean FEV1", "Standard Deviation FEV1")
+Table_Town <- as.data.frame(Table_Town)
 
-colnames(Table_Town)[colnames(Table_TOwne) == "townname"] = "Town Name"
 
+colnames(Table_Town) <- c("Town Name", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+
+knitr::kable(Table_Town, align=c("l", "c", "c","c"), digits =2, caption = "Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town")
+
+```
+
+```{r}
+#Table 2
+
+#Make a labeled version of male and female so its easy to work with
+
+sex <- as.factor(hw2data$male)
+
+hw2data[, sex := fifelse(male ==0 , "Female", "Male")]
+
+
+Table_Sex = hw2data %>% 
+  group_by(sex) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+Table_Sex <- as.data.frame(Table_Sex)
+
+
+colnames(Table_Sex) <- c("Sex", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+
+knitr::kable(Table_Sex, align=c("l", "c", "c","c"), digits =2, caption = "Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex")
+
+```
+
+```{r}
+#Table 3
+
+Table_Obesity = hw2data %>% 
+  group_by(obesity_level) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+
+Table_Obesity <- as.data.frame(Table_Obesity)
+
+
+colnames(Table_Obesity) <- c("Obesity Level", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+knitr::kable(Table_Obesity, align=c("l", "c", "c","c"), digits =2, caption = "Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity Level")
+```
+```{r}
+#Table 4
+
+Table_Smoke_Gas_Exp = hw2data %>% 
+  group_by(smoke_gas_exposure) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+
+Table_Smoke_Gas_Exp <- as.data.frame(Table_Smoke_Gas_Exp)
+
+
+colnames(Table_Smoke_Gas_Exp) <- c("Smoke Gas Exposure", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c","c"), digits =2, caption = "Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand Smoke and Gas Stove Exposure")
 ```
 

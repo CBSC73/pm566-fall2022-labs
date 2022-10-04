@@ -1,7 +1,7 @@
 Homework 2
 ================
 CB
-2022-10-03
+2022-10-04
 
 ## R Markdown
 
@@ -81,6 +81,7 @@ library(tidyverse)
 
 ``` r
 library(dtplyr)
+library(knitr)
 ```
 
 \#Load in data from github
@@ -296,7 +297,7 @@ colSums(is.na(hw2data))
 the median.
 
 ``` r
-#Impute variables with missing values using mean or mode grouped by sex/hispanic
+#Impute variables with missing values grouped by sex/hispanic
 
 hw2data[, bmi_imp := fcoalesce(bmi, mean(bmi, na.rm = T)),
     by = .(male, hispanic)]
@@ -374,19 +375,19 @@ create a summary table that contains the minimum BMI, maximum BMI, and
 the total number of observations per category.
 
 ``` r
-hw2data[, obesity_level := fifelse(bmi_imp < 14, "underweight", 
-                fifelse(bmi_imp >= 14 & bmi_imp <22, "normal",
-                fifelse(bmi_imp >=22 & bmi_imp <24, "overweight", "obese")))]
+hw2data[, obesity_level := fifelse(bmi_imp < 14, "Underweight", 
+                fifelse(bmi_imp >= 14 & bmi_imp <22, "Normal",
+                fifelse(bmi_imp >=22 & bmi_imp <24, "Overweight", "Obese")))]
 
 #Make sure categories look ok
 table(hw2data$obesity_level)
 ```
 
     ## 
-    ##      normal       obese  overweight underweight 
+    ##      Normal       Obese  Overweight Underweight 
     ##         975         103          87          35
 
-# THese look appropriate
+# These look appropriate
 
 # Make table with max, min , and total number observations per category
 
@@ -395,19 +396,20 @@ hw2data %>%
   group_by(obesity_level) %>% 
           summarise(n(),
           Min_BMI = min(bmi_imp),
-          Max_BMI = max(bmi_imp))
+          Max_BMI = max(bmi_imp)) %>% 
+              arrange(Max_BMI)
 ```
 
     ## Source: local data table [4 x 4]
     ## Call:   `_DT1`[, .(`n()` = .N, Min_BMI = min(bmi_imp), Max_BMI = max(bmi_imp)), 
-    ##     keyby = .(obesity_level)]
+    ##     keyby = .(obesity_level)][order(Max_BMI)]
     ## 
     ##   obesity_level `n()` Min_BMI Max_BMI
     ##   <chr>         <int>   <dbl>   <dbl>
-    ## 1 normal          975    14.0    22.0
-    ## 2 obese           103    24.0    41.3
-    ## 3 overweight       87    22.0    24.0
-    ## 4 underweight      35    11.3    14.0
+    ## 1 Underweight      35    11.3    14.0
+    ## 2 Normal          975    14.0    22.0
+    ## 3 Overweight       87    22.0    24.0
+    ## 4 Obese           103    24.0    41.3
     ## 
     ## # Use as.data.table()/as.data.frame()/as_tibble() to access results
 
@@ -416,17 +418,140 @@ hw2data %>%
 # Create another categorical variable named “smoke_gas_exposure” that summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have four categories in total.
 
 ``` r
-hw2data[, smoke_gas_exposure := fifelse(smoke_imp ==0 & gasstove_imp ==0, "none", 
-                fifelse(smoke_imp ==1 & gasstove_imp ==0, "smoke_only",
-                fifelse(smoke_imp ==0 & gasstove_imp ==1, "stove_only", "both")))]
+hw2data[, smoke_gas_exposure := fifelse(smoke_imp ==0 & gasstove_imp ==0, "None", 
+                fifelse(smoke_imp ==1 & gasstove_imp ==0, "Smoke Only",
+                fifelse(smoke_imp ==0 & gasstove_imp ==1, "Stove Only", "Both")))]
 
 table(hw2data$smoke_gas_exposure)
 ```
 
     ## 
-    ##       both       none smoke_only stove_only 
+    ##       Both       None Smoke Only Stove Only 
     ##        154        219         36        791
 
-## Step 4
+## Step 4 Create Summary tables
 
 # Create four summary tables showing the average (or proportion, if binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma indicator by town, sex, obesity level, and “smoke_gas_exposure.”
+
+``` r
+#Table 1
+Table_Town = hw2data %>% 
+  group_by(townname) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+
+Table_Town <- as.data.frame(Table_Town)
+
+
+colnames(Table_Town) <- c("Town Name", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+
+knitr::kable(Table_Town, align=c("l", "c", "c","c"), digits =2, caption = "Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town")
+```
+
+| Town Name     | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:--------------|:------------------:|:---------:|:------------:|
+| Alpine        |         11         |  2087.10  |    291.18    |
+| Atascadero    |         25         |  2075.90  |    324.09    |
+| Lake Elsinore |         12         |  2038.85  |    303.70    |
+| Lake Gregory  |         15         |  2084.70  |    319.96    |
+| Lancaster     |         16         |  2003.04  |    317.13    |
+| Lompoc        |         11         |  2034.35  |    351.05    |
+| Long Beach    |         13         |  1985.86  |    319.46    |
+| Mira Loma     |         15         |  1985.20  |    324.96    |
+| Riverside     |         11         |  1989.88  |    277.51    |
+| San Dimas     |         17         |  2026.79  |    318.78    |
+| Santa Maria   |         13         |  2025.75  |    312.17    |
+| Upland        |         12         |  2024.27  |    343.16    |
+
+Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town
+
+``` r
+#Table 2
+
+#Make a labeled version of male and female so its easy to work with
+
+sex <- as.factor(hw2data$male)
+
+hw2data[, sex := fifelse(male ==0 , "Female", "Male")]
+
+
+Table_Sex = hw2data %>% 
+  group_by(sex) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+Table_Sex <- as.data.frame(Table_Sex)
+
+
+colnames(Table_Sex) <- c("Sex", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+
+knitr::kable(Table_Sex, align=c("l", "c", "c","c"), digits =2, caption = "Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex")
+```
+
+| Sex    | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:-------|:------------------:|:---------:|:------------:|
+| Female |       11.80        |  1958.91  |    311.92    |
+| Male   |       16.78        |  2103.79  |    307.51    |
+
+Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex
+
+``` r
+#Table 3
+
+Table_Obesity = hw2data %>% 
+  group_by(obesity_level) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+
+Table_Obesity <- as.data.frame(Table_Obesity)
+
+
+colnames(Table_Obesity) <- c("Obesity Level", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+knitr::kable(Table_Obesity, align=c("l", "c", "c","c"), digits =2, caption = "Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity Level")
+```
+
+| Obesity Level | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:--------------|:------------------:|:---------:|:------------:|
+| Normal        |       13.64        |  1999.79  |    295.20    |
+| Obese         |       20.39        |  2266.15  |    325.47    |
+| Overweight    |       16.09        |  2224.32  |    317.43    |
+| Underweight   |        8.57        |  1698.33  |    303.40    |
+
+Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity
+Level
+
+``` r
+#Table 4
+
+Table_Smoke_Gas_Exp = hw2data %>% 
+  group_by(smoke_gas_exposure) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+
+Table_Smoke_Gas_Exp <- as.data.frame(Table_Smoke_Gas_Exp)
+
+
+colnames(Table_Smoke_Gas_Exp) <- c("Smoke Gas Exposure", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+
+knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c","c"), digits =2, caption = "Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand Smoke and Gas Stove Exposure")
+```
+
+| Smoke Gas Exposure | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:-------------------|:------------------:|:---------:|:------------:|
+| Both               |       12.34        |  2024.78  |    300.63    |
+| None               |       14.16        |  2056.69  |    328.78    |
+| Smoke Only         |       16.67        |  2055.71  |    295.65    |
+| Stove Only         |       14.54        |  2022.67  |    319.34    |
+
+Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand
+Smoke and Gas Stove Exposure
