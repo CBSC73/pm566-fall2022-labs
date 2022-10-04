@@ -72,7 +72,7 @@ colSums(is.na(hw2data))
 #For missing values, impute data using the average within the variables “male” and “hispanic.” For variables with 0/1 values will impute with the median.
 
 ```{r}
-#Impute variables with missing values using mean or mode grouped by sex/hispanic
+#Impute variables with missing values grouped by sex/hispanic
 
 hw2data[, bmi_imp := fcoalesce(bmi, mean(bmi, na.rm = T)),
     by = .(male, hispanic)]
@@ -118,14 +118,15 @@ hw2data[, obesity_level := fifelse(bmi_imp < 14, "underweight",
 table(hw2data$obesity_level)
 
 ```
-# THese look appropriate
+# These look appropriate
 # Make table with max, min , and total number observations per category
 ```{r}
 hw2data %>% 
   group_by(obesity_level) %>% 
           summarise(n(),
           Min_BMI = min(bmi_imp),
-          Max_BMI = max(bmi_imp))
+          Max_BMI = max(bmi_imp)) %>% 
+              arrange(Max_BMI)
 ```
 ## Step 3 
 # Create another categorical variable named “smoke_gas_exposure” that summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have four categories in total.
@@ -142,6 +143,18 @@ table(hw2data$smoke_gas_exposure)
 # Create four summary tables showing the average (or proportion, if binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma indicator by town, sex, obesity level, and “smoke_gas_exposure.”
 
 ```{r}
+Table_Town = hw2data %>% 
+  group_by(townname) %>% 
+          summarise(sum(asthma_imp==1)/n()*100,
+          mean_fev  = mean(fev_imp),
+          SD_fev = sd(fev_imp))
+
+Table_Town
+
+#Change column and row names
+colnames(Table_Town) = c("Town Name", "Asthma Present (%)", "Mean FEV1", "Standard Deviation FEV1")
+
+colnames(Table_Town)[colnames(Table_TOwne) == "townname"] = "Town Name"
 
 ```
 
