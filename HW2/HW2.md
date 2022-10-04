@@ -1,7 +1,7 @@
 Homework 2
 ================
 CB
-2022-09-29
+2022-10-03
 
 ## R Markdown
 
@@ -269,3 +269,164 @@ tail(hw2data)
     ## 4: -117.6484 34.09751
     ## 5: -117.6484 34.09751
     ## 6: -117.6484 34.09751
+
+\#Which variables have missing values?
+
+``` r
+colSums(is.na(hw2data))
+```
+
+    ##      townname           sid          male          race      hispanic 
+    ##             0             0             0             0             0 
+    ##        agepft        height        weight           bmi        asthma 
+    ##            89            89            89            89            31 
+    ## active_asthma father_asthma mother_asthma        wheeze      hayfever 
+    ##             0           106            56            71           118 
+    ##       allergy   educ_parent         smoke          pets      gasstove 
+    ##            63            64            40             0            33 
+    ##           fev           fvc          mmef     pm25_mass           lon 
+    ##            95            97           106             0             0 
+    ##           lat 
+    ##             0
+
+## Data Wrangling Step 1
+
+\#For missing values, impute data using the average within the variables
+“male” and “hispanic.” For variables with 0/1 values will impute with
+the median.
+
+``` r
+#Impute variables with missing values using mean or mode grouped by sex/hispanic
+
+hw2data[, bmi_imp := fcoalesce(bmi, mean(bmi, na.rm = T)),
+    by = .(male, hispanic)]
+
+
+hw2data[, fev_imp := (fcoalesce(fev, mean(fev, na.rm = T))),
+    by = .(male, hispanic)]
+
+#Create another smoke, asthma, and gasstove variable that is numeric so it can be imputed
+
+hw2data [ , smoke_num := (as.numeric(smoke, na.rm=F))]
+hw2data [ , gasstove_num := (as.numeric(gasstove, na.rm=F))]
+hw2data [ , asthma_num := (as.numeric(asthma, na.rm=F))]
+
+#Now try imputation again
+
+hw2data[, smoke_imp := (fcoalesce(smoke_num, median(smoke_num, na.rm = T))),
+    by = .(male, hispanic)]
+
+hw2data[, gasstove_imp := (fcoalesce(gasstove_num, median(gasstove_num, na.rm = T))),
+    by = .(male, hispanic)]
+
+hw2data[, asthma_imp := (fcoalesce(asthma_num, median(asthma_num, na.rm = T))),
+    by = .(male, hispanic)]
+```
+
+``` r
+head(hw2data)
+```
+
+    ##    townname sid male race hispanic    agepft height weight      bmi asthma
+    ## 1:   Alpine 835    0    W        0 10.099932    143     69 15.33749      0
+    ## 2:   Alpine 838    0    O        1  9.486653    133     62 15.93183      0
+    ## 3:   Alpine 839    0    M        1 10.053388    142     86 19.38649      0
+    ## 4:   Alpine 840    0    W        0  9.965777    146     78 16.63283      0
+    ## 5:   Alpine 841    1    W        1 10.548939    150     78 15.75758      0
+    ## 6:   Alpine 842    1    M        1  9.489391    139     65 15.29189      0
+    ##    active_asthma father_asthma mother_asthma wheeze hayfever allergy
+    ## 1:             0             0             0      0        0       1
+    ## 2:             0             0             0      0        0       0
+    ## 3:             0             0             1      1        1       1
+    ## 4:             0             0             0      0        0       0
+    ## 5:             0             0             0      0        0       0
+    ## 6:             0             0             0      1        0       0
+    ##    educ_parent smoke pets gasstove      fev      fvc     mmef pm25_mass
+    ## 1:           3     0    1        0 2529.276 2826.316 3406.579      8.74
+    ## 2:           4    NA    1        0 1737.793 1963.545 2133.110      8.74
+    ## 3:           3     1    1        0 2121.711 2326.974 2835.197      8.74
+    ## 4:          NA    NA    0       NA 2466.791 2638.221 3466.464      8.74
+    ## 5:           5     0    1        0 2251.505 2594.649 2445.151      8.74
+    ## 6:           1     1    1        0 2188.716 2423.934 2524.599      8.74
+    ##          lon      lat  bmi_imp  fev_imp smoke_num gasstove_num asthma_num
+    ## 1: -116.7664 32.83505 15.33749 2529.276         0            0          0
+    ## 2: -116.7664 32.83505 15.93183 1737.793        NA            0          0
+    ## 3: -116.7664 32.83505 19.38649 2121.711         1            0          0
+    ## 4: -116.7664 32.83505 16.63283 2466.791        NA           NA          0
+    ## 5: -116.7664 32.83505 15.75758 2251.505         0            0          0
+    ## 6: -116.7664 32.83505 15.29189 2188.716         1            0          0
+    ##    smoke_imp gasstove_imp asthma_imp
+    ## 1:         0            0          0
+    ## 2:         0            0          0
+    ## 3:         1            0          0
+    ## 4:         0            1          0
+    ## 5:         0            0          0
+    ## 6:         1            0          0
+
+# This worked. Now my dataset has the imputed variables in place.
+
+## Step 2
+
+\#Create a new categorical variable named “obesity_level” using the BMI
+measurement (underweight BMI\<14; normal BMI 14-22; overweight BMI
+22-24; obese BMI\>24). To make sure the variable is rightly coded,
+create a summary table that contains the minimum BMI, maximum BMI, and
+the total number of observations per category.
+
+``` r
+hw2data[, obesity_level := fifelse(bmi_imp < 14, "underweight", 
+                fifelse(bmi_imp >= 14 & bmi_imp <22, "normal",
+                fifelse(bmi_imp >=22 & bmi_imp <24, "overweight", "obese")))]
+
+#Make sure categories look ok
+table(hw2data$obesity_level)
+```
+
+    ## 
+    ##      normal       obese  overweight underweight 
+    ##         975         103          87          35
+
+# THese look appropriate
+
+# Make table with max, min , and total number observations per category
+
+``` r
+hw2data %>% 
+  group_by(obesity_level) %>% 
+          summarise(n(),
+          Min_BMI = min(bmi_imp),
+          Max_BMI = max(bmi_imp))
+```
+
+    ## Source: local data table [4 x 4]
+    ## Call:   `_DT1`[, .(`n()` = .N, Min_BMI = min(bmi_imp), Max_BMI = max(bmi_imp)), 
+    ##     keyby = .(obesity_level)]
+    ## 
+    ##   obesity_level `n()` Min_BMI Max_BMI
+    ##   <chr>         <int>   <dbl>   <dbl>
+    ## 1 normal          975    14.0    22.0
+    ## 2 obese           103    24.0    41.3
+    ## 3 overweight       87    22.0    24.0
+    ## 4 underweight      35    11.3    14.0
+    ## 
+    ## # Use as.data.table()/as.data.frame()/as_tibble() to access results
+
+## Step 3
+
+# Create another categorical variable named “smoke_gas_exposure” that summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have four categories in total.
+
+``` r
+hw2data[, smoke_gas_exposure := fifelse(smoke_imp ==0 & gasstove_imp ==0, "none", 
+                fifelse(smoke_imp ==1 & gasstove_imp ==0, "smoke_only",
+                fifelse(smoke_imp ==0 & gasstove_imp ==1, "stove_only", "both")))]
+
+table(hw2data$smoke_gas_exposure)
+```
+
+    ## 
+    ##       both       none smoke_only stove_only 
+    ##        154        219         36        791
+
+## Step 4
+
+# Create four summary tables showing the average (or proportion, if binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma indicator by town, sex, obesity level, and “smoke_gas_exposure.”

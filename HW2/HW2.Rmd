@@ -65,10 +65,12 @@ tail(hw2data)
 colSums(is.na(hw2data))
 ```
 
+## Data Wrangling Step 1
+
+
 
 #For missing values, impute data using the average within the variables “male” and “hispanic.” For variables with 0/1 values will impute with the median.
 
-```
 ```{r}
 #Impute variables with missing values using mean or mode grouped by sex/hispanic
 
@@ -79,10 +81,11 @@ hw2data[, bmi_imp := fcoalesce(bmi, mean(bmi, na.rm = T)),
 hw2data[, fev_imp := (fcoalesce(fev, mean(fev, na.rm = T))),
     by = .(male, hispanic)]
 
-#Create another smoke and gasstove variable that is numeric so it can be imputed
+#Create another smoke, asthma, and gasstove variable that is numeric so it can be imputed
 
 hw2data [ , smoke_num := (as.numeric(smoke, na.rm=F))]
 hw2data [ , gasstove_num := (as.numeric(gasstove, na.rm=F))]
+hw2data [ , asthma_num := (as.numeric(asthma, na.rm=F))]
 
 #Now try imputation again
 
@@ -92,9 +95,53 @@ hw2data[, smoke_imp := (fcoalesce(smoke_num, median(smoke_num, na.rm = T))),
 hw2data[, gasstove_imp := (fcoalesce(gasstove_num, median(gasstove_num, na.rm = T))),
     by = .(male, hispanic)]
 
+hw2data[, asthma_imp := (fcoalesce(asthma_num, median(asthma_num, na.rm = T))),
+    by = .(male, hispanic)]
 
+```
+```{r}
+head(hw2data)
 ```
 
 # This worked. Now my dataset has the imputed variables in place. 
 
+## Step 2 
+
+#Create a new categorical variable named “obesity_level” using the BMI measurement (underweight BMI<14; normal BMI 14-22; overweight BMI 22-24; obese BMI>24). To make sure the variable is rightly coded, create a summary table that contains the minimum BMI, maximum BMI, and the total number of observations per category.
+
+```{r}
+hw2data[, obesity_level := fifelse(bmi_imp < 14, "underweight", 
+                fifelse(bmi_imp >= 14 & bmi_imp <22, "normal",
+                fifelse(bmi_imp >=22 & bmi_imp <24, "overweight", "obese")))]
+
+#Make sure categories look ok
+table(hw2data$obesity_level)
+
+```
+# THese look appropriate
+# Make table with max, min , and total number observations per category
+```{r}
+hw2data %>% 
+  group_by(obesity_level) %>% 
+          summarise(n(),
+          Min_BMI = min(bmi_imp),
+          Max_BMI = max(bmi_imp))
+```
+## Step 3 
+# Create another categorical variable named “smoke_gas_exposure” that summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have four categories in total.
+
+```{r}
+hw2data[, smoke_gas_exposure := fifelse(smoke_imp ==0 & gasstove_imp ==0, "none", 
+                fifelse(smoke_imp ==1 & gasstove_imp ==0, "smoke_only",
+                fifelse(smoke_imp ==0 & gasstove_imp ==1, "stove_only", "both")))]
+
+table(hw2data$smoke_gas_exposure)
+```
+## Step 4
+
+# Create four summary tables showing the average (or proportion, if binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma indicator by town, sex, obesity level, and “smoke_gas_exposure.”
+
+```{r}
+
+```
 
