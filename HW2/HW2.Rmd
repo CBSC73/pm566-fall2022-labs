@@ -20,6 +20,8 @@ library(dplyr)
 library(tidyverse)
 library(dtplyr)
 library(knitr)
+library(leaflet)
+library(ggplot2)
 ```
 #Load in data from github
 ```{r}
@@ -221,5 +223,38 @@ Table_Smoke_Gas_Exp <- as.data.frame(Table_Smoke_Gas_Exp)
 colnames(Table_Smoke_Gas_Exp) <- c("Smoke Gas Exposure", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
 
 knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c","c"), digits =2, caption = "Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand Smoke and Gas Stove Exposure")
+```
+
+## Data Visualization
+
+# Generate color palette
+```{r}
+townfactor <- as.factor(hw2data$townname)
+
+pal1 <- colorFactor(scale_fill_brewer("Pastel1"),hw2data$townname)
+
+head(hw2data)
+
+    
+    numcolor = length(unique(hw2data$townname))
+    mycolor1 <- c("red", "blue", "black", "brown", "purple", "green", "darkblue", "darkgreen", "orange", "maroon", "yellow", "cyan")
+    pal1 <- mycolor1[1:numcolor] 
+    
+pal1 <- colorFactor(palette = c("red", "blue", "black", "brown", "purple", "green", "darkblue", "darkgreen", "orange", "maroon", "yellow", "cyan"), domain = hw2data$townname) 
+
+```
+
+
+#Graph works except for legend
+```{r}
+hw2data%>% 
+  ggplot(mapping = aes(x = bmi_imp, y = fev_imp)) + 
+  geom_point(mapping = aes(color = townname)) + 
+  scale_fill_brewer(palette="Pastel1")+
+  geom_smooth(method = lm, mapping = aes(linetype = townname)) +
+  facet_wrap(~ townname, nrow = 3) +
+  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 second (mL)") +
+  
+  addLegend('topright', pal = ~pal1, values=hw2data$townname, title='Town Name', opacity=1)
 ```
 
