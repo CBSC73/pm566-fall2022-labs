@@ -231,7 +231,7 @@ knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c","c"), digits =2, caption
 ```{r}
 townfactor <- as.factor(hw2data$townname)
 
-pal1 <- colorFactor(scale_fill_brewer("Pastel1"),hw2data$townname)
+pal1 <- colorFactor(scale_fill_brewer("Pastel1"), hw2data$townname)
 
 head(hw2data)
 
@@ -245,8 +245,9 @@ pal1 <- colorFactor(palette = c("red", "blue", "black", "brown", "purple", "gree
 ```
 
 
-#Graph works except for legend
+#works except for legend
 ```{r}
+#Plot 1
 hw2data%>% 
   ggplot(mapping = aes(x = bmi_imp, y = fev_imp)) + 
   geom_point(mapping = aes(color = townname)) + 
@@ -256,5 +257,35 @@ hw2data%>%
   labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 second (mL)") +
   
   addLegend('topright', pal = ~pal1, values=hw2data$townname, title='Town Name', opacity=1)
+```
+```{r}
+#Plot 2 
+Stacked histograms of FEV by BMI category and FEV by smoke/gas exposure. Use different color schemes than the ggplot default.
+
+
+hw2data %>%
+  ggplot(mapping =aes(x=fev_imp, fill = obesity_level, color = obesity_level)) +   
+  geom_histogram(bin = 100, binwidth = 50)+
+  labs(title="Forced Expiratory Volume by Body Mass Index", x="Forced Expiratory Volume in 1 second (mL)", y= "Observations")+
+scale_color_brewer(palette = "Greens")
+
+```
+
+```{r}
+#Plot 3
+hw2data %>%
+  ggplot(mapping =aes(x=fev_imp, fill = smoke_gas_exposure, color = smoke_gas_exposure)) +   
+  geom_histogram(bin = 100, binwidth = 50)+
+  labs(title="Forced Expiratory Volume by Second Hand Smoke & Gas Stove Exposure", x="Forced Expiratory Volume in 1 second (mL)", y= "Observations")+
+scale_color_brewer(palette = "Greens")
+```
+```{r}
+#Plot 4
+
+hw2data %>%
+  ggplot(mapping =aes(x=smoke_gas_exposure, y=bmi_imp)) +   
+  geom_bar()+
+  labs(title="Body Mass Index by Second Hand Smoke and Gas Stove Exposure", x="Second Hand Smoke and Gas Stove Exposure", y= "Body Mass Index (kg/m2)")+
+scale_color_brewer(palette = "Greens")
 ```
 
