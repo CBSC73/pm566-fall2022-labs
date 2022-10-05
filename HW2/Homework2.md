@@ -1,7 +1,7 @@
 Homework 2
 ================
 CB
-2022-10-04
+2022-10-05
 
 ## R Markdown
 
@@ -529,7 +529,7 @@ hw2data%>%
   scale_color_brewer(palette="Paired")+
   geom_smooth(method = lm, mapping = aes(linetype = townname)) +
   facet_wrap(~ townname, nrow = 3) +
-  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 second (mL)") 
+  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 Second (mL)") 
 ```
 
     ## `geom_smooth()` using formula 'y ~ x'
@@ -622,8 +622,8 @@ pal1
     ##     }
     ##     pf(rescaled)
     ## }
-    ## <bytecode: 0x0000027a77f431a0>
-    ## <environment: 0x0000027a77f51b40>
+    ## <bytecode: 0x0000013386d01ec0>
+    ## <environment: 0x0000013386d00448>
     ## attr(,"colorType")
     ## [1] "numeric"
     ## attr(,"colorArgs")
@@ -646,3 +646,112 @@ prettymap
 ```
 
 ![](Homework2_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+## Step 6 Choose a visualization to examine whether PM2.5 mass is associated with FEV.
+
+# Will examine this with ANOVA to determine whether there is statistically significant difference in FEV between the twelve PM2.5 mass/locations in our dataset.
+
+``` r
+head(hw2data)
+```
+
+    ##    townname sid male race hispanic    agepft height weight      bmi asthma
+    ## 1:   Alpine 835    0    W        0 10.099932    143     69 15.33749      0
+    ## 2:   Alpine 838    0    O        1  9.486653    133     62 15.93183      0
+    ## 3:   Alpine 839    0    M        1 10.053388    142     86 19.38649      0
+    ## 4:   Alpine 840    0    W        0  9.965777    146     78 16.63283      0
+    ## 5:   Alpine 841    1    W        1 10.548939    150     78 15.75758      0
+    ## 6:   Alpine 842    1    M        1  9.489391    139     65 15.29189      0
+    ##    active_asthma father_asthma mother_asthma wheeze hayfever allergy
+    ## 1:             0             0             0      0        0       1
+    ## 2:             0             0             0      0        0       0
+    ## 3:             0             0             1      1        1       1
+    ## 4:             0             0             0      0        0       0
+    ## 5:             0             0             0      0        0       0
+    ## 6:             0             0             0      1        0       0
+    ##    educ_parent smoke pets gasstove      fev      fvc     mmef pm25_mass
+    ## 1:           3     0    1        0 2529.276 2826.316 3406.579      8.74
+    ## 2:           4    NA    1        0 1737.793 1963.545 2133.110      8.74
+    ## 3:           3     1    1        0 2121.711 2326.974 2835.197      8.74
+    ## 4:          NA    NA    0       NA 2466.791 2638.221 3466.464      8.74
+    ## 5:           5     0    1        0 2251.505 2594.649 2445.151      8.74
+    ## 6:           1     1    1        0 2188.716 2423.934 2524.599      8.74
+    ##          lon      lat  bmi_imp  fev_imp smoke_num gasstove_num asthma_num
+    ## 1: -116.7664 32.83505 15.33749 2529.276         0            0          0
+    ## 2: -116.7664 32.83505 15.93183 1737.793        NA            0          0
+    ## 3: -116.7664 32.83505 19.38649 2121.711         1            0          0
+    ## 4: -116.7664 32.83505 16.63283 2466.791        NA           NA          0
+    ## 5: -116.7664 32.83505 15.75758 2251.505         0            0          0
+    ## 6: -116.7664 32.83505 15.29189 2188.716         1            0          0
+    ##    smoke_imp gasstove_imp asthma_imp obesity_level smoke_gas_exposure    sex
+    ## 1:         0            0          0        Normal               None Female
+    ## 2:         0            0          0        Normal               None Female
+    ## 3:         1            0          0        Normal         Smoke Only Female
+    ## 4:         0            1          0        Normal         Stove Only Female
+    ## 5:         0            0          0        Normal               None   Male
+    ## 6:         1            0          0        Normal         Smoke Only   Male
+
+``` r
+dim(hw2data)
+```
+
+    ## [1] 1200   37
+
+``` r
+#Check assumptions - Look at histogram for shape of FEV data, is it normal?
+
+hist(hw2data$fev_imp)
+```
+
+![](Homework2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+# This looks pretty normal.
+
+``` r
+#Another data visualization to confirm that the PM2.5 values are grouped by location 
+plot(fev_imp ~ pm25_mass, data = hw2data)
+```
+
+![](Homework2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+
+``` r
+unique(hw2data$pm25_mass)
+```
+
+    ##  [1]  8.74  7.48 12.35  7.66  8.50  5.96 19.12 29.97 22.39 20.52  7.19 22.46
+
+\#Confirming only 12 unique PM2.5 conc values.
+
+# Run anova test
+
+``` r
+anova1 <- aov(fev_imp ~ pm25_mass, data = hw2data)
+
+summary(anova1)
+```
+
+    ##               Df    Sum Sq Mean Sq F value Pr(>F)  
+    ## pm25_mass      1    653446  653446   6.492  0.011 *
+    ## Residuals   1198 120591049  100660                 
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+hw2data %>% group_by(pm25_mass) %>% summarise(mean_fev_imp = mean(fev_imp)) %>% arrange(mean_fev_imp)
+```
+
+    ## Source: local data table [12 x 2]
+    ## Call:   `_DT6`[, .(mean_fev_imp = mean(fev_imp)), keyby = .(pm25_mass)][order(mean_fev_imp)]
+    ## 
+    ##   pm25_mass mean_fev_imp
+    ##       <dbl>        <dbl>
+    ## 1     30.0         1985.
+    ## 2     19.1         1986.
+    ## 3     22.4         1990.
+    ## 4      8.5         2003.
+    ## 5     22.5         2024.
+    ## 6      7.19        2026.
+    ## # … with 6 more rows
+    ## # ℹ Use `print(n = ...)` to see more rows
+    ## 
+    ## # Use as.data.table()/as.data.frame()/as_tibble() to access results

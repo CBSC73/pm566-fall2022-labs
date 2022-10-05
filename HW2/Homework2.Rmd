@@ -191,7 +191,7 @@ hw2data%>%
   scale_color_brewer(palette="Paired")+
   geom_smooth(method = lm, mapping = aes(linetype = townname)) +
   facet_wrap(~ townname, nrow = 3) +
-  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 second (mL)") 
+  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 Second (mL)") 
 ```
 
 ## Step 2 Make stacked histograms 
@@ -257,5 +257,44 @@ prettymap <- leaflet(hw2data) %>%
           title='PM 2.5 Concentration by City', opacity=1)
 
 prettymap
+```
+
+## Step 6 Choose a visualization to examine whether PM2.5 mass is associated with FEV.
+
+# Will examine this with ANOVA to determine whether there is statistically significant difference in FEV between the twelve PM2.5 mass/locations in our dataset. 
+
+
+```{r}
+head(hw2data)
+dim(hw2data)
+```
+
+
+```{r}
+#Check assumptions - Look at histogram for shape of FEV data, is it normal?
+
+hist(hw2data$fev_imp)
+```
+
+# This looks pretty normal.
+
+```{r}
+#Another data visualization to confirm that the PM2.5 values are grouped by location 
+plot(fev_imp ~ pm25_mass, data = hw2data)
+```
+```{r}
+unique(hw2data$pm25_mass)
+```
+
+#Confirming only 12 unique PM2.5 conc values. 
+
+# Run anova test
+```{r}
+anova1 <- aov(fev_imp ~ pm25_mass, data = hw2data)
+
+summary(anova1)
+```
+```{r}
+hw2data %>% group_by(pm25_mass) %>% summarise(mean_fev_imp = mean(fev_imp)) %>% arrange(mean_fev_imp)
 ```
 
