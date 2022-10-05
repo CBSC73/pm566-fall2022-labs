@@ -1,7 +1,7 @@
 Homework_1
 ================
 CB
-2022-09-24
+2022-10-05
 
 ## R Markdown Homework 1
 

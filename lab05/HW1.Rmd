@@ -1,0 +1,279 @@
+---
+title: "Homework_1"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown Homework 1
+# Load required libraries
+```{r}
+library(data.table)
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+library(leaflet)
+library(readr)
+library(stringr)
+```
+## Learning point: How to load data with data.table
+
+```{r}
+
+pm2004 <- data.table::fread("C:\\Users\\clair\\Desktop\\PM566\\PM566-HW1\\ad_viz_plotval_data.csv") 
+  
+pm2019 <- data.table::fread("C:\\Users\\clair\\Desktop\\PM566\\PM566-HW1\\ad_viz_plotval_data2019.csv") 
+
+```
+# Check the dimensions of the 2004 data
+```{r}
+
+dim(pm2004)
+
+
+```
+# Check the dimensions of the 2019 data
+```{r}
+
+dim(pm2019)
+
+```
+
+# Check the headers and footers
+```{r}
+head(pm2004)
+tail(pm2004)
+head(pm2019)
+tail(pm2019)
+```
+# Check the variable names and variable types for 2004 data
+```{r}
+str(pm2004)
+
+```
+# Check the variable names and variable types for 2019 data
+```{r}
+str(pm2019)
+```
+
+#_There are the same number of variables (20) and variable names in the two datasets. The 2019 dataset has a lot more observations however than 2004_
+
+
+
+# Are there any missing values for our variable of interest?
+```{r}
+mean(is.na(pm2004$`Daily Mean PM2.5 Concentration`))
+
+```
+```{r}
+mean(is.na(pm2019$`Daily Mean PM2.5 Concentration`))
+```
+#_There do not appear to be missing values for our variable of interest in either year._
+
+
+
+## Step 2
+
+# Combine the two years of data into one data frame
+```{r}
+pm <- rbind(pm2004, pm2019)
+dim(pm)
+```
+
+#_This number of rows 72389 looks correct, 19233 + 53156 = 72389_
+
+## Create a new variable for year. 
+# First, subset the last four characters from the Date variable for our year variable using the stringr package. Then check the head and tail of our dataset to be sure both 2004 and 2019 data are represented correctly.
+```{r}
+pm<- mutate(pm, year=str_sub(pm$Date,-4, -1))
+head(pm)
+tail(pm)
+```
+#_Year variable matches the Date variable. Now there are 21 columns in my dataset_
+
+# Rename the PM2.5 concentration variable to something easier to workwith, will use "conc"
+```{r}
+pm<- rename(pm, 'conc' = 'Daily Mean PM2.5 Concentration')
+head(pm)
+```
+## Step 3 - Create a map in leaflet showing locations of the sites
+
+# Get the unique latitudes and longitudes
+```{r}
+pm_locations <- (unique(pm[,c("SITE_LATITUDE","SITE_LONGITUDE", "year")]))  
+dim(pm_locations)
+```
+
+# Generate color palette
+```{r}
+pal1 <- colorFactor(c('red','blue'), domain=pm_locations$year)
+```
+# Create map
+```{r}
+leaflet(pm_locations) %>% 
+  addProviderTiles('CartoDB.Positron') %>% 
+  addCircles(lat = ~SITE_LATITUDE, lng = ~SITE_LONGITUDE, color = ~ pal1(year), opacity = 0.5, fillOpacity = 0.25, radius = 2500) %>%
+
+  addLegend('bottomleft', pal=pal1, values=pm_locations$year,
+          title='Measurement Year', opacity=1)
+```
+
+#_The dark purple dots are where a site was measured in both years 2004 and 2019. It looks like there are a lot of new sites in the 2019 data set. These new sites appear well spread out between north and south and populous/less populous areas of the state. There are just a few sites from 2004 (maybe around 8 red dots) that were not included in the 2019 dataset._
+
+## Step 4 Check for missing or implausible values of PM2.5 
+```{r}
+mean(is.na(pm$conc))
+```
+#_No missing values for PM2.5_
+
+
+# Examine proportions and look for implausible values
+```{r}
+summary(pm$conc)
+
+
+```
+
+#_There are appears to be some negative values in the data which there shouldn't be. Zero should be lowest value._
+
+# Examine implausible values more closely - Do these relate to the pairing of the two years at the site level? First, create a new dataset called "explore" with only the implausible values, ie the negative values
+ 
+```{r}
+explore <-subset(pm, pm$conc<0)
+dim(explore)
+```
+#_There are 283 observations that are negative PM2.5 values. Lets see how many of these are from 2004 vs 2019 and then examine by site._
+
+```{r}
+explore %>% count(year)
+
+```
+
+#_Nearly all of the implausible values are from 2019, only one is from 2004_
+
+# Examine implausible values by site
+```{r}
+explore <- rename(explore, Site_ID='Site ID')
+explore %>% count(Site_ID)
+#Look at observations from the two sites with the most implausible values 
+explore %>% filter_all(any_vars(. %in% c(60611004, 60659001)))
+```
+#_There are 41 unique sites with implausible values spread among them. Site 60611004 however has by far the most implausible values in the dataset at 153.This is in Tahoe City. Lake Elisnore is the site with the second most at 30 implausible observations. In total 183/283 (65%) implausible observations are from one of these two sites._ 
+
+## Step 5 Examine the primary question using plots 
+
+# Make the negative values into NA so they are not included in our calculations
+```{r}
+pm[pm$conc< 0] <- NA
+summary(pm$conc)
+
+```
+
+
+# Create a boxplot of PM2.5 concentration comparing 2004 to 2019
+```{r}
+pm [!is.na(year)]%>% 
+  ggplot()+
+  geom_boxplot(mapping=aes(x=year, y=conc, fill=year))
+```
+
+#_The outlier 250 value is making the Y axis too big and so its harder to see the pattern between 2004 and 2019. Will remove this one outlier from the dataset_ 
+
+```{r}
+pm[pm$conc>250] <- NA
+summary(pm$conc)
+```
+#Now rerun the boxplot graph
+♣
+```{r}
+pm [!is.na(year)]%>% 
+  ggplot()+
+  geom_boxplot(mapping=aes(x=year, y=conc, fill=year))
+```
+#_Looks better, easier to tell that overall trend for PM2.5 is down between the two years_
+
+# Summary statistics for 2004, remove negative values first
+```{r}
+
+pm2004[pm2004$`Daily Mean PM2.5 Concentration`< 0] <- NA
+summary(pm2004$`Daily Mean PM2.5 Concentration`)
+```
+
+# Summary statistics for 2019, remove negative values first
+```{r}
+pm2019[pm2019$`Daily Mean PM2.5 Concentration`< 0] <- NA
+summary(pm2019$`Daily Mean PM2.5 Concentration`)
+```
+
+#_We can see that the mean for 2004 for PM2.5 was 13.13, and this was down in 2019 to 7.787, so PM2.5 concentration statewide is decreasing. This is an approximately 40% decrease over the 15 year period._
+
+# Examine change in PM2.5 Concentration from 2004 to 2019 on the county level
+
+#Make a table of observations in each county in 2004 and 2019
+```{r}
+table(pm$COUNTY, pm$year)
+
+```
+#_Glenn, Tahera, Napa, Tehama are all new sites that EPA added sometime after 2004_
+
+```{r}
+pm %>% group_by(COUNTY, year) %>% summarise(Avg=mean(conc)) %>% arrange(COUNTY)
+```
+
+
+#Create PLOT
+
+```{r}
+ggplot(pm) + 
+  geom_histogram(mapping = aes(x = conc, color=year, fill=year, bin=1, binwidth=100))+
+  labs(title="PM2.5 Concentration on the County Level", x="Mean PM2.5 Concentration")
+
+```
+
+#_We can see that between the two years, the concentrations in 2019 have more lower values (less than 7.5 mean approximately) compared to 2004_
+#I wanted the count to have the counties grouped, however this is just observation count, not grouped by county unfortunately.
+
+#Look at Site level, Los Angeles
+```{r}
+
+#pm <- as.Date('Date', format = "%m/%d/%Y")  
+#month <- format(pm, "%m") 
+
+
+
+#pmsub <- filter(pm, Site_ID == 60370002) 
+
+#My variables aren't working. I've spent over 20 hours on this HW, the syntax of R is very challenging for me even if I understand exactly what I want to do and how everything is grouped/piped. I tried; stopping for now.
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
