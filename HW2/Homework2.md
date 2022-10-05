@@ -427,28 +427,28 @@ table(hw2data$smoke_gas_exposure)
 #Table 1
 Table_Town = hw2data %>% 
   group_by(townname) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
           mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
 Table_Town <- as.data.frame(Table_Town)
-colnames(Table_Town) <- c("Town Name", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Town, align=c("l", "c", "c","c"), digits =2, caption = "Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town")
+colnames(Table_Town) <- c("Town Name","N", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Town, align=c("l", "c", "c", "c","c"), digits =2, caption = "Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town")
 ```
 
-| Town Name     | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
-|:--------------|:------------------:|:---------:|:------------:|
-| Alpine        |         11         |  2087.10  |    291.18    |
-| Atascadero    |         25         |  2075.90  |    324.09    |
-| Lake Elsinore |         12         |  2038.85  |    303.70    |
-| Lake Gregory  |         15         |  2084.70  |    319.96    |
-| Lancaster     |         16         |  2003.04  |    317.13    |
-| Lompoc        |         11         |  2034.35  |    351.05    |
-| Long Beach    |         13         |  1985.86  |    319.46    |
-| Mira Loma     |         15         |  1985.20  |    324.96    |
-| Riverside     |         11         |  1989.88  |    277.51    |
-| San Dimas     |         17         |  2026.79  |    318.78    |
-| Santa Maria   |         13         |  2025.75  |    312.17    |
-| Upland        |         12         |  2024.27  |    343.16    |
+| Town Name     |  N  | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:--------------|:---:|:------------------:|:---------:|:------------:|
+| Alpine        | 100 |         11         |  2087.10  |    291.18    |
+| Atascadero    | 100 |         25         |  2075.90  |    324.09    |
+| Lake Elsinore | 100 |         12         |  2038.85  |    303.70    |
+| Lake Gregory  | 100 |         15         |  2084.70  |    319.96    |
+| Lancaster     | 100 |         16         |  2003.04  |    317.13    |
+| Lompoc        | 100 |         11         |  2034.35  |    351.05    |
+| Long Beach    | 100 |         13         |  1985.86  |    319.46    |
+| Mira Loma     | 100 |         15         |  1985.20  |    324.96    |
+| Riverside     | 100 |         11         |  1989.88  |    277.51    |
+| San Dimas     | 100 |         17         |  2026.79  |    318.78    |
+| Santa Maria   | 100 |         13         |  2025.75  |    312.17    |
+| Upland        | 100 |         12         |  2024.27  |    343.16    |
 
 Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town
 
@@ -459,18 +459,18 @@ sex <- as.factor(hw2data$male)
 hw2data[, sex := fifelse(male ==0 , "Female", "Male")]
 Table_Sex = hw2data %>% 
   group_by(sex) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
-          mean_fev  = mean(fev_imp),
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
+                    mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
-Table_Sex <- as.data.frame(Table_Sex)
-colnames(Table_Sex) <- c("Sex", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Sex, align=c("l", "c", "c","c"), digits =2, caption = "Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex")
+       Table_Sex <- as.data.frame(Table_Sex)
+colnames(Table_Sex) <- c("Sex", "N", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Sex, align=c("l", "c", "c", "c","c"), digits =2, caption = "Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex")
 ```
 
-| Sex    | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
-|:-------|:------------------:|:---------:|:------------:|
-| Female |       11.80        |  1958.91  |    311.92    |
-| Male   |       16.78        |  2103.79  |    307.51    |
+| Sex    |  N  | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:-------|:---:|:------------------:|:---------:|:------------:|
+| Female | 610 |       11.80        |  1958.91  |    311.92    |
+| Male   | 590 |       16.78        |  2103.79  |    307.51    |
 
 Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex
 
@@ -478,20 +478,20 @@ Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex
 #Table 3
 Table_Obesity = hw2data %>% 
   group_by(obesity_level) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
           mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
 Table_Obesity <- as.data.frame(Table_Obesity)
-colnames(Table_Obesity) <- c("Obesity Level", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Obesity, align=c("l", "c", "c","c"), digits =2, caption = "Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity Level")
+colnames(Table_Obesity) <- c("Obesity Level", "N", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Obesity, align=c("l", "c","c", "c","c"), digits =2, caption = "Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity Level")
 ```
 
-| Obesity Level | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
-|:--------------|:------------------:|:---------:|:------------:|
-| Normal        |       13.64        |  1999.79  |    295.20    |
-| Obese         |       20.39        |  2266.15  |    325.47    |
-| Overweight    |       16.09        |  2224.32  |    317.43    |
-| Underweight   |        8.57        |  1698.33  |    303.40    |
+| Obesity Level |  N  | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:--------------|:---:|:------------------:|:---------:|:------------:|
+| Normal        | 975 |       13.64        |  1999.79  |    295.20    |
+| Obese         | 103 |       20.39        |  2266.15  |    325.47    |
+| Overweight    | 87  |       16.09        |  2224.32  |    317.43    |
+| Underweight   | 35  |        8.57        |  1698.33  |    303.40    |
 
 Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity
 Level
@@ -500,20 +500,20 @@ Level
 #Table 4
 Table_Smoke_Gas_Exp = hw2data %>% 
   group_by(smoke_gas_exposure) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
           mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
 Table_Smoke_Gas_Exp <- as.data.frame(Table_Smoke_Gas_Exp)
-colnames(Table_Smoke_Gas_Exp) <- c("Smoke Gas Exposure", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c","c"), digits =2, caption = "Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand Smoke and Gas Stove Exposure")
+colnames(Table_Smoke_Gas_Exp) <- c("Smoke Gas Exposure", "N","Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c", "c","c"), digits =2, caption = "Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand Smoke and Gas Stove Exposure")
 ```
 
-| Smoke Gas Exposure | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
-|:-------------------|:------------------:|:---------:|:------------:|
-| Both               |       12.34        |  2024.78  |    300.63    |
-| None               |       14.16        |  2056.69  |    328.78    |
-| Smoke Only         |       16.67        |  2055.71  |    295.65    |
-| Stove Only         |       14.54        |  2022.67  |    319.34    |
+| Smoke Gas Exposure |  N  | Asthma Present (%) | Mean FEV1 | Std Dev FEV1 |
+|:-------------------|:---:|:------------------:|:---------:|:------------:|
+| Both               | 154 |       12.34        |  2024.78  |    300.63    |
+| None               | 219 |       14.16        |  2056.69  |    328.78    |
+| Smoke Only         | 36  |       16.67        |  2055.71  |    295.65    |
+| Stove Only         | 791 |       14.54        |  2022.67  |    319.34    |
 
 Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand
 Smoke and Gas Stove Exposure
@@ -529,7 +529,7 @@ hw2data%>%
   scale_color_brewer(palette="Paired")+
   geom_smooth(method = lm, mapping = aes(linetype = townname)) +
   facet_wrap(~ townname, nrow = 3) +
-  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 Second (mL)") 
+  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 Second (mL)")
 ```
 
     ## `geom_smooth()` using formula 'y ~ x'
@@ -622,8 +622,8 @@ pal1
     ##     }
     ##     pf(rescaled)
     ## }
-    ## <bytecode: 0x0000013386d01ec0>
-    ## <environment: 0x0000013386d00448>
+    ## <bytecode: 0x0000019a001a8bb0>
+    ## <environment: 0x0000019a001a7738>
     ## attr(,"colorType")
     ## [1] "numeric"
     ## attr(,"colorArgs")
@@ -649,70 +649,14 @@ prettymap
 
 ## Step 6 Choose a visualization to examine whether PM2.5 mass is associated with FEV.
 
-# Will examine this with ANOVA to determine whether there is statistically significant difference in FEV between the twelve PM2.5 mass/locations in our dataset.
-
 ``` r
-head(hw2data)
-```
-
-    ##    townname sid male race hispanic    agepft height weight      bmi asthma
-    ## 1:   Alpine 835    0    W        0 10.099932    143     69 15.33749      0
-    ## 2:   Alpine 838    0    O        1  9.486653    133     62 15.93183      0
-    ## 3:   Alpine 839    0    M        1 10.053388    142     86 19.38649      0
-    ## 4:   Alpine 840    0    W        0  9.965777    146     78 16.63283      0
-    ## 5:   Alpine 841    1    W        1 10.548939    150     78 15.75758      0
-    ## 6:   Alpine 842    1    M        1  9.489391    139     65 15.29189      0
-    ##    active_asthma father_asthma mother_asthma wheeze hayfever allergy
-    ## 1:             0             0             0      0        0       1
-    ## 2:             0             0             0      0        0       0
-    ## 3:             0             0             1      1        1       1
-    ## 4:             0             0             0      0        0       0
-    ## 5:             0             0             0      0        0       0
-    ## 6:             0             0             0      1        0       0
-    ##    educ_parent smoke pets gasstove      fev      fvc     mmef pm25_mass
-    ## 1:           3     0    1        0 2529.276 2826.316 3406.579      8.74
-    ## 2:           4    NA    1        0 1737.793 1963.545 2133.110      8.74
-    ## 3:           3     1    1        0 2121.711 2326.974 2835.197      8.74
-    ## 4:          NA    NA    0       NA 2466.791 2638.221 3466.464      8.74
-    ## 5:           5     0    1        0 2251.505 2594.649 2445.151      8.74
-    ## 6:           1     1    1        0 2188.716 2423.934 2524.599      8.74
-    ##          lon      lat  bmi_imp  fev_imp smoke_num gasstove_num asthma_num
-    ## 1: -116.7664 32.83505 15.33749 2529.276         0            0          0
-    ## 2: -116.7664 32.83505 15.93183 1737.793        NA            0          0
-    ## 3: -116.7664 32.83505 19.38649 2121.711         1            0          0
-    ## 4: -116.7664 32.83505 16.63283 2466.791        NA           NA          0
-    ## 5: -116.7664 32.83505 15.75758 2251.505         0            0          0
-    ## 6: -116.7664 32.83505 15.29189 2188.716         1            0          0
-    ##    smoke_imp gasstove_imp asthma_imp obesity_level smoke_gas_exposure    sex
-    ## 1:         0            0          0        Normal               None Female
-    ## 2:         0            0          0        Normal               None Female
-    ## 3:         1            0          0        Normal         Smoke Only Female
-    ## 4:         0            1          0        Normal         Stove Only Female
-    ## 5:         0            0          0        Normal               None   Male
-    ## 6:         1            0          0        Normal         Smoke Only   Male
-
-``` r
-dim(hw2data)
-```
-
-    ## [1] 1200   37
-
-``` r
-#Check assumptions - Look at histogram for shape of FEV data, is it normal?
-
-hist(hw2data$fev_imp)
-```
-
-![](Homework2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
-
-# This looks pretty normal.
-
-``` r
-#Another data visualization to confirm that the PM2.5 values are grouped by location 
+#View data with a simple plot 
 plot(fev_imp ~ pm25_mass, data = hw2data)
 ```
 
-![](Homework2_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](Homework2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- --> \#
+Confirming that each town has one PM2.5 value (12 PM2.5 values go with
+the 12 towns)
 
 ``` r
 unique(hw2data$pm25_mass)
@@ -720,38 +664,4 @@ unique(hw2data$pm25_mass)
 
     ##  [1]  8.74  7.48 12.35  7.66  8.50  5.96 19.12 29.97 22.39 20.52  7.19 22.46
 
-\#Confirming only 12 unique PM2.5 conc values.
-
-# Run anova test
-
-``` r
-anova1 <- aov(fev_imp ~ pm25_mass, data = hw2data)
-
-summary(anova1)
-```
-
-    ##               Df    Sum Sq Mean Sq F value Pr(>F)  
-    ## pm25_mass      1    653446  653446   6.492  0.011 *
-    ## Residuals   1198 120591049  100660                 
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
-hw2data %>% group_by(pm25_mass) %>% summarise(mean_fev_imp = mean(fev_imp)) %>% arrange(mean_fev_imp)
-```
-
-    ## Source: local data table [12 x 2]
-    ## Call:   `_DT6`[, .(mean_fev_imp = mean(fev_imp)), keyby = .(pm25_mass)][order(mean_fev_imp)]
-    ## 
-    ##   pm25_mass mean_fev_imp
-    ##       <dbl>        <dbl>
-    ## 1     30.0         1985.
-    ## 2     19.1         1986.
-    ## 3     22.4         1990.
-    ## 4      8.5         2003.
-    ## 5     22.5         2024.
-    ## 6      7.19        2026.
-    ## # … with 6 more rows
-    ## # ℹ Use `print(n = ...)` to see more rows
-    ## 
-    ## # Use as.data.table()/as.data.frame()/as_tibble() to access results
+\#Confirming again there are only 12 unique PM2.5 conc values.

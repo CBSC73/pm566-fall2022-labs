@@ -134,12 +134,12 @@ table(hw2data$smoke_gas_exposure)
 #Table 1
 Table_Town = hw2data %>% 
   group_by(townname) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
           mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
 Table_Town <- as.data.frame(Table_Town)
-colnames(Table_Town) <- c("Town Name", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Town, align=c("l", "c", "c","c"), digits =2, caption = "Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town")
+colnames(Table_Town) <- c("Town Name","N", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Town, align=c("l", "c", "c", "c","c"), digits =2, caption = "Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town")
 ```
 
 ```{r}
@@ -149,36 +149,36 @@ sex <- as.factor(hw2data$male)
 hw2data[, sex := fifelse(male ==0 , "Female", "Male")]
 Table_Sex = hw2data %>% 
   group_by(sex) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
-          mean_fev  = mean(fev_imp),
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
+                    mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
-Table_Sex <- as.data.frame(Table_Sex)
-colnames(Table_Sex) <- c("Sex", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Sex, align=c("l", "c", "c","c"), digits =2, caption = "Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex")
+       Table_Sex <- as.data.frame(Table_Sex)
+colnames(Table_Sex) <- c("Sex", "N", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Sex, align=c("l", "c", "c", "c","c"), digits =2, caption = "Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex")
 ```
 
 ```{r}
 #Table 3
 Table_Obesity = hw2data %>% 
   group_by(obesity_level) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
           mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
 Table_Obesity <- as.data.frame(Table_Obesity)
-colnames(Table_Obesity) <- c("Obesity Level", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Obesity, align=c("l", "c", "c","c"), digits =2, caption = "Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity Level")
+colnames(Table_Obesity) <- c("Obesity Level", "N", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Obesity, align=c("l", "c","c", "c","c"), digits =2, caption = "Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity Level")
 ```
 
 ```{r}
 #Table 4
 Table_Smoke_Gas_Exp = hw2data %>% 
   group_by(smoke_gas_exposure) %>% 
-          summarise(sum(asthma_imp==1)/n()*100,
+          summarise(n = n(), sum(asthma_imp==1)/n()*100,
           mean_fev  = mean(fev_imp),
           SD_fev = sd(fev_imp))
 Table_Smoke_Gas_Exp <- as.data.frame(Table_Smoke_Gas_Exp)
-colnames(Table_Smoke_Gas_Exp) <- c("Smoke Gas Exposure", "Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
-knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c","c"), digits =2, caption = "Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand Smoke and Gas Stove Exposure")
+colnames(Table_Smoke_Gas_Exp) <- c("Smoke Gas Exposure", "N","Asthma Present (%)", "Mean FEV1", "Std Dev FEV1")
+knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c", "c","c"), digits =2, caption = "Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand Smoke and Gas Stove Exposure")
 ```
 
 ## Data Visualization
@@ -191,7 +191,7 @@ hw2data%>%
   scale_color_brewer(palette="Paired")+
   geom_smooth(method = lm, mapping = aes(linetype = townname)) +
   facet_wrap(~ townname, nrow = 3) +
-  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 Second (mL)") 
+  labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index (kg/m2)", y= "Forced Expiratory Volume in 1 Second (mL)")
 ```
 
 ## Step 2 Make stacked histograms 
@@ -261,40 +261,17 @@ prettymap
 
 ## Step 6 Choose a visualization to examine whether PM2.5 mass is associated with FEV.
 
-# Will examine this with ANOVA to determine whether there is statistically significant difference in FEV between the twelve PM2.5 mass/locations in our dataset. 
-
 
 ```{r}
-head(hw2data)
-dim(hw2data)
-```
-
-
-```{r}
-#Check assumptions - Look at histogram for shape of FEV data, is it normal?
-
-hist(hw2data$fev_imp)
-```
-
-# This looks pretty normal.
-
-```{r}
-#Another data visualization to confirm that the PM2.5 values are grouped by location 
+#View data with a simple plot 
 plot(fev_imp ~ pm25_mass, data = hw2data)
 ```
+# Confirming that each town has one PM2.5 value (12 PM2.5 values go with the 12 towns)
+
 ```{r}
 unique(hw2data$pm25_mass)
 ```
 
-#Confirming only 12 unique PM2.5 conc values. 
+#Confirming again there are only 12 unique PM2.5 conc values. 
 
-# Run anova test
-```{r}
-anova1 <- aov(fev_imp ~ pm25_mass, data = hw2data)
-
-summary(anova1)
-```
-```{r}
-hw2data %>% group_by(pm25_mass) %>% summarise(mean_fev_imp = mean(fev_imp)) %>% arrange(mean_fev_imp)
-```
 
