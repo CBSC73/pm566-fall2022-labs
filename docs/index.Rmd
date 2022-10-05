@@ -37,4 +37,14 @@ library(tidyverse)
 ```{r}
 stringr::str_extract(counts, "[0-9,]+")
 ```
+# Question 2
+```{r}
+library(httr)
+query_ids <- GET(
+  url   = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+  query = list(db="pubmed", term="covid19 hawaii", retmax=1000),)
+
+ids <- httr::content(query_ids)
+ids
+```
 

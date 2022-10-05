@@ -402,6 +402,25 @@ library(tidyverse)</code></pre>
 <pre class="r"><code>stringr::str_extract(counts, &quot;[0-9,]+&quot;)</code></pre>
 <pre><code>## [1] &quot;179,021&quot;</code></pre>
 </div>
+<div id="question-2" class="section level1">
+<h1>Question 2</h1>
+<pre class="r"><code>library(httr)
+query_ids &lt;- GET(
+  url   = &quot;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi&quot;,
+  query = list(db=&quot;pubmed&quot;, term=&quot;covid19 hawaii&quot;, retmax=1000),)
+
+ids &lt;- httr::content(query_ids)
+ids</code></pre>
+<pre><code>## {xml_document}
+## &lt;eSearchResult&gt;
+## [1] &lt;Count&gt;285&lt;/Count&gt;
+## [2] &lt;RetMax&gt;285&lt;/RetMax&gt;
+## [3] &lt;RetStart&gt;0&lt;/RetStart&gt;
+## [4] &lt;IdList&gt;\n  &lt;Id&gt;36186620&lt;/Id&gt;\n  &lt;Id&gt;36173983&lt;/Id&gt;\n  &lt;Id&gt;36146513&lt;/Id&gt;\n ...
+## [5] &lt;TranslationSet&gt;\n  &lt;Translation&gt;\n    &lt;From&gt;covid19&lt;/From&gt;\n    &lt;To&gt;&quot;cov ...
+## [6] &lt;TranslationStack&gt;\n  &lt;TermSet&gt;\n    &lt;Term&gt;&quot;covid-19&quot;[MeSH Terms]&lt;/Term&gt;\ ...
+## [7] &lt;QueryTranslation&gt;(&quot;covid-19&quot;[MeSH Terms] OR &quot;covid-19&quot;[All Fields] OR &quot;c ...</code></pre>
+</div>
 
 
 
