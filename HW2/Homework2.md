@@ -191,8 +191,12 @@ unique(regional_trim$townname)
     ##  [5] "Lompoc"        "Long Beach"    "Mira Loma"     "Riverside"    
     ##  [9] "San Dimas"     "Atascadero"    "Santa Maria"   "Upland"
 
-\#Check variables for merging. There are 12 unique townnames. This
-matches with the 12 rows from the regional dataset. \#Merge data
+\#There are 12 unique towns
+
+\#Check variables for merging. The 12 unique townnames match with the 12
+rows from the regional dataset.
+
+\#Merge data
 
 ``` r
 hw2data <-merge(individual, regional_trim, by="townname" )
@@ -289,11 +293,41 @@ colSums(is.na(hw2data))
     ##           lat 
     ##             0
 
+\#\_Varibles that have missing values that we will need for our analyses
+are: BMI (89/1200 =7.4% missing), FEV (95/1200 = 7.9% missing), Smoke
+(40/1200 = 3.3% missing), Gas Stove (33/1200 = 2.8% missing), Asthma
+(31/1200=2.58% missing)
+
+\#Calculate all the imputation percentages with code and put them in a
+table
+
+``` r
+Table_imputation_Percents = hw2data %>% 
+    summarise(ASTHMA_percent_imputed = sum(is.na(hw2data$asthma))/n()*100,
+              BMI_percent_imputed = sum(is.na(hw2data$bmi))/n()*100,
+              FEV_percent_imputed = sum(is.na(hw2data$fev))/n()*100,
+              SMOKE_percent_imputed = sum(is.na(hw2data$smoke))/n()*100,
+              GASSTOVE_percent_imputed = sum(is.na(hw2data$gasstove))/n()*100)
+
+Table_imputation_Percents <-as.data.frame(Table_imputation_Percents)
+colnames(Table_imputation_Percents) <- c("Asthma", "BMI", "FEV", "Smoke", "Gas Stove")
+                                        
+knitr::kable(Table_imputation_Percents, align=c("c", "c", "c", "c","c"), digits =2, caption = "Imputated Percentages by Variable")
+```
+
+| Asthma | BMI  | FEV  | Smoke | Gas Stove |
+|:------:|:----:|:----:|:-----:|:---------:|
+|  2.58  | 7.42 | 7.92 | 3.33  |   2.75    |
+
+Imputated Percentages by Variable
+
+\#*We can see that all the imputation percentages are pretty low, below
+10%. Asthma, smoke, and gasstove are even below 5%.*
+
 ## Data Wrangling Step 1
 
 \#For missing values, impute data using the average within the variables
-“male” and “hispanic.” For variables with 0/1 values will impute with
-the median.
+“male” and “hispanic.”
 
 ``` r
 #Impute variables with missing values grouped by sex/hispanic
@@ -316,47 +350,30 @@ hw2data[, asthma_imp := (fcoalesce(asthma_num, median(asthma_num, na.rm = T))),
     by = .(male, hispanic)]
 ```
 
+\#Make sure that the imputed variables do not have any NA values -
+specifically we are checking bmi_imp, fev_imp, smoke_imp, gasstove_imp,
+asthma_imp
+
 ``` r
-head(hw2data)
+colSums(is.na(hw2data))
 ```
 
-    ##    townname sid male race hispanic    agepft height weight      bmi asthma
-    ## 1:   Alpine 835    0    W        0 10.099932    143     69 15.33749      0
-    ## 2:   Alpine 838    0    O        1  9.486653    133     62 15.93183      0
-    ## 3:   Alpine 839    0    M        1 10.053388    142     86 19.38649      0
-    ## 4:   Alpine 840    0    W        0  9.965777    146     78 16.63283      0
-    ## 5:   Alpine 841    1    W        1 10.548939    150     78 15.75758      0
-    ## 6:   Alpine 842    1    M        1  9.489391    139     65 15.29189      0
-    ##    active_asthma father_asthma mother_asthma wheeze hayfever allergy
-    ## 1:             0             0             0      0        0       1
-    ## 2:             0             0             0      0        0       0
-    ## 3:             0             0             1      1        1       1
-    ## 4:             0             0             0      0        0       0
-    ## 5:             0             0             0      0        0       0
-    ## 6:             0             0             0      1        0       0
-    ##    educ_parent smoke pets gasstove      fev      fvc     mmef pm25_mass
-    ## 1:           3     0    1        0 2529.276 2826.316 3406.579      8.74
-    ## 2:           4    NA    1        0 1737.793 1963.545 2133.110      8.74
-    ## 3:           3     1    1        0 2121.711 2326.974 2835.197      8.74
-    ## 4:          NA    NA    0       NA 2466.791 2638.221 3466.464      8.74
-    ## 5:           5     0    1        0 2251.505 2594.649 2445.151      8.74
-    ## 6:           1     1    1        0 2188.716 2423.934 2524.599      8.74
-    ##          lon      lat  bmi_imp  fev_imp smoke_num gasstove_num asthma_num
-    ## 1: -116.7664 32.83505 15.33749 2529.276         0            0          0
-    ## 2: -116.7664 32.83505 15.93183 1737.793        NA            0          0
-    ## 3: -116.7664 32.83505 19.38649 2121.711         1            0          0
-    ## 4: -116.7664 32.83505 16.63283 2466.791        NA           NA          0
-    ## 5: -116.7664 32.83505 15.75758 2251.505         0            0          0
-    ## 6: -116.7664 32.83505 15.29189 2188.716         1            0          0
-    ##    smoke_imp gasstove_imp asthma_imp
-    ## 1:         0            0          0
-    ## 2:         0            0          0
-    ## 3:         1            0          0
-    ## 4:         0            1          0
-    ## 5:         0            0          0
-    ## 6:         1            0          0
+    ##      townname           sid          male          race      hispanic 
+    ##             0             0             0             0             0 
+    ##        agepft        height        weight           bmi        asthma 
+    ##            89            89            89            89            31 
+    ## active_asthma father_asthma mother_asthma        wheeze      hayfever 
+    ##             0           106            56            71           118 
+    ##       allergy   educ_parent         smoke          pets      gasstove 
+    ##            63            64            40             0            33 
+    ##           fev           fvc          mmef     pm25_mass           lon 
+    ##            95            97           106             0             0 
+    ##           lat       bmi_imp       fev_imp     smoke_num  gasstove_num 
+    ##             0             0             0            40            33 
+    ##    asthma_num     smoke_imp  gasstove_imp    asthma_imp 
+    ##            31             0             0             0
 
-# This worked. Now my dataset has the imputed variables in place.
+\#*This worked. None of the imputed variables have missing data.*
 
 ## Step 2
 
@@ -378,9 +395,9 @@ table(hw2data$obesity_level)
     ##      Normal       Obese  Overweight Underweight 
     ##         975         103          87          35
 
-# These look appropriate
+\#These look appropriate
 
-# Make table with max, min , and total number observations per category
+\#Make table with max, min , and total number observations per category.
 
 ``` r
 hw2data %>% 
@@ -392,7 +409,7 @@ hw2data %>%
 ```
 
     ## Source: local data table [4 x 4]
-    ## Call:   `_DT1`[, .(`n()` = .N, Min_BMI = min(bmi_imp), Max_BMI = max(bmi_imp)), 
+    ## Call:   `_DT2`[, .(`n()` = .N, Min_BMI = min(bmi_imp), Max_BMI = max(bmi_imp)), 
     ##     keyby = .(obesity_level)][order(Max_BMI)]
     ## 
     ##   obesity_level `n()` Min_BMI Max_BMI
@@ -406,7 +423,9 @@ hw2data %>%
 
 ## Step 3
 
-# Create another categorical variable named “smoke_gas_exposure” that summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have four categories in total.
+\#Create another categorical variable named “smoke_gas_exposure” that
+summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have
+four categories in total.
 
 ``` r
 hw2data[, smoke_gas_exposure := fifelse(smoke_imp ==0 & gasstove_imp ==0, "None", 
@@ -419,9 +438,11 @@ table(hw2data$smoke_gas_exposure)
     ##       Both       None Smoke Only Stove Only 
     ##        154        219         36        791
 
-## Step 4 Create Summary tables
+## Step 4 - Create Summary tables
 
-# Create four summary tables showing the average (or proportion, if binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma indicator by town, sex, obesity level, and “smoke_gas_exposure.”
+\#Create four summary tables showing the average (or proportion, if
+binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma
+indicator by town, sex, obesity level, and “smoke_gas_exposure.”
 
 ``` r
 #Table 1
@@ -452,6 +473,12 @@ knitr::kable(Table_Town, align=c("l", "c", "c", "c","c"), digits =2, caption = "
 
 Table 1. Forced expiratory volume in 1 second (mL) (FEV1) by Town
 
+\#*Atascadero has much higher rates of asthma compared to other cities.
+The next highest would be San Dimas and then Lancaster. It looks like
+the FEV1 for these cities is right around the average for the dataset as
+a whole (they aren’t especially low despite their high asthma
+percentages).*
+
 ``` r
 #Table 2
 #Make a labeled version of male and female so its easy to work with
@@ -473,6 +500,11 @@ knitr::kable(Table_Sex, align=c("l", "c", "c", "c","c"), digits =2, caption = "T
 | Male   | 590 |       16.78        |  2103.79  |    307.51    |
 
 Table 2. Forced expiratory volume in 1 second (mL) (FEV1) by Sex
+
+\#*Males have a higher risk of asthma comapred to females in this
+dataset, 17% versus 12%. Males have a higher FEV1 and this is likely due
+to them just being larger and having bigger lungs capable of larger
+expiratory volumes.*
 
 ``` r
 #Table 3
@@ -496,6 +528,15 @@ knitr::kable(Table_Obesity, align=c("l", "c","c", "c","c"), digits =2, caption =
 Table 3. Forced expiratory volume in 1 second (mL) (FEV1) by Obesity
 Level
 
+\#*Obesity level does appear to be associated with presence of asthma.
+As BMI gets higher, prevalence of asthma increases. The rate of asthma
+between normal weight and obese subjects is hugely different, an almost
+50% increase in risk. The FEV1 appears to go up as BMI goes up. This is
+counter intuitive to what we see with asthma risk (since asthma reduces
+FEV1), but I suspect that FEV1 going up as BMI goes up is a function of
+larger children with larger lungs having higher FEV1s due to body size
+and overall development.*
+
 ``` r
 #Table 4
 Table_Smoke_Gas_Exp = hw2data %>% 
@@ -518,9 +559,16 @@ knitr::kable(Table_Smoke_Gas_Exp, align=c("l", "c", "c", "c","c"), digits =2, ca
 Table 4. Forced expiratory volume in 1 second (mL) (FEV1) by Second Hand
 Smoke and Gas Stove Exposure
 
+\#*The highest rate of asthma is in patients with only second hand smoke
+exposure. Though the N for this group is very low (only 36). The lowest
+asthma percent is in the both group which is a bit confusing. Mean FEV1
+is highest in the none and smoke only groups, with the Stove only and
+both groups having the lowest FEV1. This suggests that the gas stove is
+the exposure that is most likely associated with a lower FEV1.*
+
 ## Data Visualization
 
-## Step 1 FEV by BMI grouped by townname
+\##Step 1 FEV by BMI grouped by townname
 
 ``` r
 hw2data%>% 
@@ -534,34 +582,57 @@ hw2data%>%
 
     ## `geom_smooth()` using formula 'y ~ x'
 
-![](Homework2_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](Homework2_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
-## Step 2 Make stacked histograms
+\#*Overall the BMI and FEV1 variables appear to have a positive
+association. As BMI increases, FEV1 increases. This is true across all
+12 towns. Some towns have a more dramatic slope than others, especially
+Atascadero, Lake Elsinore, and Upland. In these cities it looks like the
+data have fewer high BMI subjects pulling the FEV line down (like we see
+in Riverside for instance).*
+
+\##Step 2 - Make stacked histograms
 
 ``` r
 hw2data %>%
   ggplot(mapping =aes(x=fev_imp, fill = obesity_level, color = obesity_level)) +   
-  geom_histogram(bin = 100, binwidth = 75, color="black")+
+  geom_histogram(bin = 100, binwidth = 100, color="black")+
   labs(title="Forced Expiratory Volume by Body Mass Index", x="Forced Expiratory Volume in 1 second (mL)", y= "Observations")+
 scale_fill_brewer(palette = "Set2")
 ```
 
     ## Warning: Ignoring unknown parameters: bin
 
-![](Homework2_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](Homework2_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+\#*The obese and overweight bars (orange and blue) appear to have their
+own mean that is pushed toward a higher FEV1 volume compared to the
+overall mean of the data. Conversely the underweight subjects (pink)
+appear to have a mean on the lower end of the FEV1 spectrum. This is a
+nice visual of what we saw in the table from a previous question.*
 
 ``` r
 hw2data %>%
   ggplot(mapping =aes(x=fev_imp, fill = smoke_gas_exposure, color = smoke_gas_exposure)) +   
-  geom_histogram(bin = 100, binwidth = 75, color="black" )+
+  geom_histogram(bin = 100, binwidth = 100, color="black" )+
   labs(title="Forced Expiratory Volume by Second Hand Smoke & Gas Stove Exposure", x="Forced Expiratory Volume in 1 second (mL)", y= "Number of Observations")+
 scale_fill_brewer(palette = "Set1")
 ```
 
     ## Warning: Ignoring unknown parameters: bin
 
-![](Homework2_files/figure-gfm/unnamed-chunk-20-1.png)<!-- --> \## Step
-3 Make bar chart of BMI by smoke/gas exposure
+![](Homework2_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+\#*The majority of patients in this dataset have exposure to a gas stove
+(purple, red). The sheer numer of stove exposures make it harder to
+tease out whether smoke or gas stove are independently associated with
+FEV, at least in this graphical view. I think stratifying the data
+between gas stove or no gas stove and then evaluating again would be
+more fruitful. However there does appear to be more exposure to both in
+the lower end of FEV around 1600mL where the red section appears to be a
+higheer proportion of the total bar versus the rest of the graph.*
+
+## Step 3 - Make bar chart of BMI by smoke/gas exposure
 
 ``` r
 hw2data%>%
@@ -570,12 +641,20 @@ hw2data%>%
     stat_summary(fun.data = mean_sdl, geom = "errorbar", width = 0.2) +
   stat_summary(fun.data = mean_sdl, geom = "point")+
 labs(title="Body Mass Index by Second Hand Smoke and Gas Stove Exposure", x="Second Hand Smoke and Gas Stove Exposure", y= "Mean Body Mass Index (kg/m2)")+
-scale_fill_brewer(palette = "Blues")
+scale_fill_brewer(palette = "Blues")+
+  theme_get()
 ```
 
     ## Warning: `fun.y` is deprecated. Use `fun` instead.
 
-![](Homework2_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](Homework2_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+\#*It looks as though BMI is higher in patients with Smoke only exposure
+or both Smoke and Gas Stove exposure. This suggests that second hand
+smoke exposure is likely the more causative (or more highly associated)
+factor when it comes to these exposures and BMI. The effects of a gas
+stove appear minimal as the mean BMI for Stove Only looks very similar
+to no exposure at all.*
 
 ``` r
 hw2data %>% 
@@ -587,7 +666,14 @@ labs(title="Forced Expiratory Volume by Body Mass Index", x="Body Mass Index(kg/
 
     ## `geom_smooth()` using formula 'y ~ x'
 
-![](Homework2_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](Homework2_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+\#*The positive association between FEV1 and BMI is probably due to
+larger children having bigger lungs and higher FEV1 values for their
+age. We know from the table from a previous question that higher BMI is
+associated with higher rates of asthma. So if we added asthma as a
+variable to this evaluation it would probably be useful for seeing how
+BMI interacts with FEV and asthma.*
 
 ``` r
 hw2data %>% 
@@ -597,9 +683,17 @@ labs(title="Forced Expiratory Volume by Second Hand Smoke and Gas Stove Exposure
   scale_fill_brewer(palette = "Pastel1")
 ```
 
-![](Homework2_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](Homework2_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
-## Create leaflet plot
+\#*Smoke and gas exposure may have a small effect on FEV1. The effect is
+probably coming from the stove exposure. The means for Both and Stove
+Only are very close, and the means for None and Smoke Only are very
+close. We know from the table that the difference in FEV1 is about 30
+(out of around 2000mL), or a change of 1-2%. This is pretty small. One
+would probably need a larger dataset with other variables controlled for
+in order to demonstrate the relationship between these variables.*
+
+## Step 5 - Create leaflet plot
 
 ``` r
 # Generating a color palette
@@ -622,8 +716,8 @@ pal1
     ##     }
     ##     pf(rescaled)
     ## }
-    ## <bytecode: 0x0000019a001a8bb0>
-    ## <environment: 0x0000019a001a7738>
+    ## <bytecode: 0x00000149bfbb1450>
+    ## <environment: 0x00000149bfba9d40>
     ## attr(,"colorType")
     ## [1] "numeric"
     ## attr(,"colorArgs")
@@ -645,23 +739,36 @@ prettymap <- leaflet(hw2data) %>%
 prettymap
 ```
 
-![](Homework2_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](Homework2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
-## Step 6 Choose a visualization to examine whether PM2.5 mass is associated with FEV.
+\#*The cities examined are in central and southern California. It looks
+like there is worse air quality (higher PM2.5 concentrations) near the
+more urban areas like Los Angeles and Long Beach (the port is a source
+of pollution). This makes sense, more cars, more planes, more sources of
+air pollution.*
+
+## Step 6 - Choose a visualization to examine whether PM2.5 mass is associated with FEV.
+
+\#Make graph using a regression line to see what kind of relationship
+there is between PM2.5 and FEV1
 
 ``` r
-#View data with a simple plot 
-plot(fev_imp ~ pm25_mass, data = hw2data)
+hw2data %>% 
+  ggplot(mapping = aes(x = pm25_mass, y = fev_imp)) + 
+  geom_point(color="blue") + 
+  geom_smooth(method = lm, color="purple")+
+labs(title="Forced Expiratory Volume by PM2.5 Concentration", x="PM2.5 Concentration", y= "Forced Expiratory Volume in 1 second (mL)")
 ```
 
-![](Homework2_files/figure-gfm/unnamed-chunk-26-1.png)<!-- --> \#
-Confirming that each town has one PM2.5 value (12 PM2.5 values go with
-the 12 towns)
+    ## `geom_smooth()` using formula 'y ~ x'
 
-``` r
-unique(hw2data$pm25_mass)
-```
+![](Homework2_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
-    ##  [1]  8.74  7.48 12.35  7.66  8.50  5.96 19.12 29.97 22.39 20.52  7.19 22.46
-
-\#Confirming again there are only 12 unique PM2.5 conc values.
+\#*There appears to be a negative relationship between FEV1 and PM2.5
+concentration. The regression line (purple) slopes downward. In other
+words as PM2.5 concentration increases, FEV1 decreases. This makes sense
+as PM2.5 is known to be an air pollutant that harms the lungs. This data
+would suggest that PM2.5 is associated with reduced lung function (lower
+FEV1 indicates worse lung function) though we are not looking at
+statistical significance so this trend may not be statistically
+significant.*
