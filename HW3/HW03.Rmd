@@ -63,12 +63,10 @@ ids <- as.character(ids)
 
 ```{r}
 ids <- stringr::str_extract_all(ids, "<Id>[[:digit:]]+</Id>")[[1]]
-# Remove all the leading and trailing <Id> </Id>. Make use of "|"
+# Remove all the leading and trailing <Id> </Id>. 
 ids <- stringr::str_remove_all(ids, "</?Id>")
 head(ids)
 ```
-
-### Get Pubmed IDs, make into a character
 
 ```{r}
 publications <- GET(
@@ -84,11 +82,57 @@ publications <- GET(
 publications <- httr::content(publications)
 
 publications_txt <- as.character(publications)
+
 ```
 
 ## Create a dataset containing Pubmed ID number,Title of the paper,Name of the journal where it was published,Publication date, and Abstract of the paper (if any).
 ```{r}
+pub_char_list <- xml2::xml_children(publications)
+pub_char_list <- sapply(pub_char_list, as.character)
+
+```
+```{r, get titles}
+titles <- str_extract(pub_char_list, "<ArticleTitle>[[:print:][:space:]]+</ArticleTitle>")
+titles[[1]]
+titles <- str_remove_all(titles, "</?[[:alnum:]- =\"]+>")
+titles[[1]]
+```
+
+```{r, get name of journal}
+journalname <- str_extract(pub_char_list, "<Title>[[:print:][:space:]]+</Title>")
+journalname[[1]]
+journalname <- str_remove_all(journalname, "</?[[:alnum:]- =\"]+>")
+journalname[[1]]
 
 ```
 
+```{r, get abstracts}
+abstracts <- str_extract(pub_char_list, "<Abstract>[[:print:][:space:]]+</Abstract>")
+abstracts[[1]]
+abstracts <- str_remove_all(abstracts, "</?[[:alnum:]- =\"]+>") 
+abstracts[[1]]
+abstracts <- str_replace_all(abstracts, "[[:space:]]+"," ")
+abstracts[[1]]
 
+```
+```{r, get publication year}
+pubyear <- str_extract(pub_char_list, "<Year>[0-9]{4}</Year>")
+pubyear[[1]]
+pubyear <- str_remove_all(pubyear, "</?[[:alnum:]- =\"]+>")
+pubyear[[1]]
+
+```
+```{r, get publication month}
+pubmonth <- str_extract(pub_char_list, "<Month>[a-zA-Z]{3}</Month>")
+pubmonth[[1]]
+pubmonth <- str_remove_all(pubmonth, "</?[[:alnum:]- =\"]+>")
+pubmonth[[1]]
+
+```
+
+```{r, get publication day}
+pubday <- str_extract(pub_char_list, "<Day>[0-9]{1,2}</Day>")
+pubday[[1]]
+pubday <- str_remove_all(pubday, "</?[[:alnum:]- =\"]+>")
+pubday[[1]]
+```
