@@ -1,0 +1,94 @@
+---
+title: "Homework 3"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+### Load required libraries
+```{r, results='hide'}
+library(data.table)
+library(dplyr)
+library(tidyverse)
+library(dtplyr)
+library(knitr)
+library(ggplot2)
+library(rvest)
+library(httr)
+library(xml2)
+library(stringr)
+```
+## Part 1: How many papers under the search term "sars-cov-2 trial vaccine"?
+
+```{r}
+# Downloading the website
+website <- xml2::read_html("https://pubmed.ncbi.nlm.nih.gov/?term=sars-cov-2%20trial%20vaccine")
+
+# Finding the counts
+
+counts <- xml2::xml_find_first(website, "/html/body/main/div[9]/div[2]/div[2]/div[1]/div[1]")
+
+counts <- as.character(counts)
+counts
+
+# Extracting the data using regex
+stringr::str_extract(counts, "[0-9,]+")
+```
+### _There are 3,997 results from this search_
+
+### Create database
+```{r}
+query_ids <- GET(
+  url   = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+  query = list(
+    db      = "pubmed",
+    term    = "sars-cov-2 trial vaccine",
+    retmax  = 250
+  ), 
+)
+```
+```{r}
+# Extracting, make character
+ids <- httr::content(query_ids)
+ids <- as.character(ids)
+```
+
+
+```{r}
+ids <- stringr::str_extract_all(ids, "<Id>[[:digit:]]+</Id>")[[1]]
+# Remove all the leading and trailing <Id> </Id>. Make use of "|"
+ids <- stringr::str_remove_all(ids, "</?Id>")
+head(ids)
+```
+
+### Get Pubmed IDs, make into a character
+
+```{r}
+publications <- GET(
+  url   = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+  query = list(
+    db  = "pubmed",
+    id  = paste(ids,collapse = ","),
+  retmax = 250,
+  rettype = "abstract"
+    )
+)
+# Extracting the content of the response of GET
+publications <- httr::content(publications)
+
+publications_txt <- as.character(publications)
+```
+
+## Create a dataset containing Pubmed ID number,Title of the paper,Name of the journal where it was published,Publication date, and Abstract of the paper (if any).
+```{r}
+
+```
+
+
