@@ -248,15 +248,22 @@ search_term %>%
 knitr::kable()
 ```
 
-```{r, include=False}
-pubmedabs %>%
+```{r}
+term_table <-pubmedabs %>%
   group_by(term) %>% 
   unnest_tokens(word, abstract) %>%
   count(word, sort = TRUE) %>%
-  bind_tf_idf(word, term, n)
+    bind_tf_idf(word, term, n)
 
+
+
+term_table %>%
+    top_n(5,tf_idf) %>% 
+    arrange(desc(term)) %>%
+knitr::kable(digits =4, align=c("l", "c", "c", "c","c","c"), caption = "Top 5 TF-IDFs by Search Term")
 
 ```
+
 
 
 
