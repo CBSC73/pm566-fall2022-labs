@@ -177,7 +177,9 @@ library(forcats)
 #Count number of tokens
 pubmedabs %>%
   unnest_tokens(word, abstract) %>%
-  count(word, sort = TRUE)
+  count(word, sort = TRUE) %>% 
+  top_n(10, n)
+  
 ```
 
 ```{r}
@@ -190,7 +192,7 @@ pubmedabs %>%
   ggplot(aes(n, fct_reorder(word, n))) +
   geom_col()
 ```
-### _Here are the top 20 words in the abstracts. "COVID" and "19" are at the top of the list, thus likely articles about COVID are the most common abstracts. "Cancer" and "prostate" are also on the list and most likely the second most common articles after COVID._ 
+### _Figure showing the top 20 words in the abstracts. "COVID" and "19" are at the top of the list, thus likely articles about COVID are the most common abstracts. "Cancer" and "prostate" are also on the list and most likely the second most common articles after COVID._ 
 
 ```{r}
 #Remove stop words
@@ -203,7 +205,7 @@ pubmedabs %>%
   geom_col()
 
 ```
-### _Removing stop words DOES change what tokens appear as the most frequent, and now the results are more illuminating. COVID is at the top so most likely these are the most numerous articles. Then prostate cancer second. Pre-eclampsia is now on the list so that may be the third most common article subject. The terms "women" and "pregnancy" are probably high becuase these are article about pre-eclampsia which is a pregnancy disorder._
+### _Figure showing the top 20 words AFTER removing stop words. This DOES change what tokens appear as the most frequent, and now the results are more illuminating. COVID is at the top so most likely these are the most numerous articles. Then prostate cancer second. Pre-eclampsia is now on the list so that may be the third most common article subject. The terms "women" and "pregnancy" are probably high becuase these are article about pre-eclampsia which is a pregnancy disorder._
 
 ```{r}
 #Top 5 words table 
@@ -218,11 +220,29 @@ top5<- top5[1:5,]
 
 top5 %>%
     arrange(desc(n)) %>%
-knitr::kable(caption = "Top 5 Words", align=c("l", "c"))
+knitr::kable(caption = "Table - Top 5 Words", align=c("l", "c"))
 
 ```
 
-### Step 2: Tokenize the abstracts into bigrams. Find the 10 most common bigrams and visualize them with ggplot2.
+### Examine Top 5 words BY search term after removing stop words
+```{r}
+top5byterm <- 
+    pubmedabs %>%
+    group_by(term) %>% 
+  unnest_tokens(word, abstract) %>%
+  count(word, sort = TRUE) %>% 
+  anti_join(stop_words, by = c("word")) 
+
+top5byterm %>%
+    top_n(5,n) %>% 
+    arrange(desc(term)) %>%
+knitr::kable(caption = "Table - Top 5 Words by Search Term", align=c("l", "c","c"))
+```
+
+### _Table showing the top 5 terms from each search term abstract. We can see that the top terms are very different depending on the original search term. We get more words that are more specific to that particular topic._
+
+
+## Step 2: Tokenize the abstracts into bigrams. Find the 10 most common bigrams and visualize them with ggplot2.
 ```{r}
 pubmedabs %>%
   unnest_ngrams(bigram, abstract, n=2) %>%
@@ -260,9 +280,12 @@ term_table <-pubmedabs %>%
 term_table %>%
     top_n(5,tf_idf) %>% 
     arrange(desc(term)) %>%
-knitr::kable(digits =4, align=c("l", "c", "c", "c","c","c"), caption = "Top 5 TF-IDFs by Search Term")
+knitr::kable(digits =4, align=c("l", "c", "c", "c","c","c"), caption = "Table - Top 5 TF-IDFs by Search Term")
 
 ```
+
+### Table showing the highest TD-IDF values for each of the five search terms.
+### _Comparing the information in this table to the top tokens from Question 1, 
 
 
 
