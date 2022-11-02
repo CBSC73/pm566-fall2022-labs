@@ -45,6 +45,89 @@ query_ids <- GET(
   query = list(db="pubmed", term="covid19 hawaii", retmax=1000),)
 
 ids <- httr::content(query_ids)
-ids
+```
+
+# Question 3
+```{r}
+# Turn the result into a character vector
+ids <- as.character(ids)
+
+# Find all the ids 
+ids <- stringr::str_extract_all(ids, "<Id>[[:digit:]]+</Id>")[[1]]
+
+# Remove all the leading and trailing <Id> </Id>. Make use of "|"
+ids <- stringr::str_remove_all(ids, "</?Id>")
+
+```
+
+
+```{r}
+#Get publications with these ids
+
+publications <- GET(
+  url="https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi", 
+  query = list(db="pubmed", id = paste(ids, collapse = ","), retmax=1000, rettype="abstract"))
+
+```
+```{r}
+publications <- httr::content(publications)
+publications_txt <- as.character(publications)
+```
+
+## Question 4: Distribution of universities, schools, and departments
+
+```{r}
+institution <- str_extract_all(
+  publications_txt,
+  "University of\\s+[[:alpha:]]+|[[:alpha:]]+\\s+Institute of\\s+[[:alpha:]]+"
+  ) 
+institution <- unlist(institution)
+table(institution)
+```
+```{r}
+schools_and_deps <- str_extract_all(
+  publications_txt,
+  "School of\\s+[[:alpha:]]+|Department of\\s+[[:alpha:]]+"
+  )
+schools_and_deps = unlist(schools_and_deps)
+table(schools_and_deps)
+```
+
+## Question 5: Form a database
+
+```{r}
+pub_char_list <- xml2::xml_children(publications)
+pub_char_list <- sapply(pub_char_list, as.character)
+```
+
+Now, extract the abstract and article title for each one of the elements of pub_char_list
+
+```{r}
+abstracts <- str_extract(pub_char_list, "<Abstract>[[:print:][:space:]]+</Abstract>")
+abstracts[[1]]
+abstracts <- str_remove_all(abstracts, "</?[[:alnum:]- =\"]+>") 
+abstracts[[1]]
+abstracts <- str_replace_all(abstracts, "[[:space:]]+"," ")
+abstracts[[1]]
+```
+
+Now get the titles:
+
+```{r}
+titles <- str_extract(pub_char_list, "<ArticleTitle>[[:print:][:space:]]+</ArticleTitle>")
+titles[[1]]
+titles <- str_remove_all(titles, "</?[[:alnum:]- =\"]+>")
+titles[[1]]
+```
+
+Finally the dataset:
+
+```{r}
+database <- data.frame(
+  PubMedId = ids,
+  Title    = titles,
+  Abstract = abstracts
+)
+knitr::kable(database[1:8,], caption = "Some papers about Covid19 and Hawaii")
 ```
 

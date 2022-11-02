@@ -11,7 +11,7 @@
 
 <meta name="author" content="CB" />
 
-<meta name="date" content="2022-10-05" />
+<meta name="date" content="2022-11-02" />
 
 <title>Lab07</title>
 
@@ -365,7 +365,7 @@ pre code {
 
 <h1 class="title toc-ignore">Lab07</h1>
 <h4 class="author">CB</h4>
-<h4 class="date">2022-10-05</h4>
+<h4 class="date">2022-11-02</h4>
 
 </div>
 
@@ -400,7 +400,7 @@ library(tidyverse)</code></pre>
 <div id="extracting-the-data-using-regex" class="section level1">
 <h1>Extracting the data using regex</h1>
 <pre class="r"><code>stringr::str_extract(counts, &quot;[0-9,]+&quot;)</code></pre>
-<pre><code>## [1] &quot;179,021&quot;</code></pre>
+<pre><code>## [1] &quot;182,180&quot;</code></pre>
 </div>
 <div id="question-2" class="section level1">
 <h1>Question 2</h1>
@@ -409,17 +409,628 @@ query_ids &lt;- GET(
   url   = &quot;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi&quot;,
   query = list(db=&quot;pubmed&quot;, term=&quot;covid19 hawaii&quot;, retmax=1000),)
 
-ids &lt;- httr::content(query_ids)
-ids</code></pre>
-<pre><code>## {xml_document}
-## &lt;eSearchResult&gt;
-## [1] &lt;Count&gt;285&lt;/Count&gt;
-## [2] &lt;RetMax&gt;285&lt;/RetMax&gt;
-## [3] &lt;RetStart&gt;0&lt;/RetStart&gt;
-## [4] &lt;IdList&gt;\n  &lt;Id&gt;36186620&lt;/Id&gt;\n  &lt;Id&gt;36173983&lt;/Id&gt;\n  &lt;Id&gt;36146513&lt;/Id&gt;\n ...
-## [5] &lt;TranslationSet&gt;\n  &lt;Translation&gt;\n    &lt;From&gt;covid19&lt;/From&gt;\n    &lt;To&gt;&quot;cov ...
-## [6] &lt;TranslationStack&gt;\n  &lt;TermSet&gt;\n    &lt;Term&gt;&quot;covid-19&quot;[MeSH Terms]&lt;/Term&gt;\ ...
-## [7] &lt;QueryTranslation&gt;(&quot;covid-19&quot;[MeSH Terms] OR &quot;covid-19&quot;[All Fields] OR &quot;c ...</code></pre>
+ids &lt;- httr::content(query_ids)</code></pre>
+</div>
+<div id="question-3" class="section level1">
+<h1>Question 3</h1>
+<pre class="r"><code># Turn the result into a character vector
+ids &lt;- as.character(ids)
+
+# Find all the ids 
+ids &lt;- stringr::str_extract_all(ids, &quot;&lt;Id&gt;[[:digit:]]+&lt;/Id&gt;&quot;)[[1]]
+
+# Remove all the leading and trailing &lt;Id&gt; &lt;/Id&gt;. Make use of &quot;|&quot;
+ids &lt;- stringr::str_remove_all(ids, &quot;&lt;/?Id&gt;&quot;)</code></pre>
+<pre class="r"><code>#Get publications with these ids
+
+publications &lt;- GET(
+  url=&quot;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi&quot;, 
+  query = list(db=&quot;pubmed&quot;, id = paste(ids, collapse = &quot;,&quot;), retmax=1000, rettype=&quot;abstract&quot;))</code></pre>
+<pre class="r"><code>publications &lt;- httr::content(publications)
+publications_txt &lt;- as.character(publications)</code></pre>
+<div id="question-4-distribution-of-universities-schools-and-departments" class="section level2">
+<h2>Question 4: Distribution of universities, schools, and
+departments</h2>
+<pre class="r"><code>institution &lt;- str_extract_all(
+  publications_txt,
+  &quot;University of\\s+[[:alpha:]]+|[[:alpha:]]+\\s+Institute of\\s+[[:alpha:]]+&quot;
+  ) 
+institution &lt;- unlist(institution)
+table(institution)</code></pre>
+<pre><code>## institution
+##              Army Institute of Research        Australian Institute of Tropical 
+##                                       1                                      15 
+##       Beijing Institute of Pharmacology              Berlin Institute of Health 
+##                                       2                                       4 
+##              Broad Institute of Harvard               Cancer Institute of Emory 
+##                                       2                                       2 
+##                 Cancer Institute of New           Genome Institute of Singapore 
+##                                       1                                       1 
+##    Graduate Institute of Rehabilitation         Health Institute of Montpellier 
+##                                       3                                       1 
+##          Heidelberg Institute of Global                   i Institute of Marine 
+##                                       1                                       2 
+##            Indian Institute of Tropical            Leeds Institute of Rheumatic 
+##                                       5                                       2 
+##   Massachusetts Institute of Technology            Mayo Institute of Technology 
+##                                       1                                       1 
+##          Medanta Institute of Education Mediterranean Institute of Oceanography 
+##                                       1                                       2 
+##                 MGM Institute of Health       Monterrey Institute of Technology 
+##                                       1                                       1 
+##           National Institute of Allergy        National Institute of Biomedical 
+##                                       3                                       1 
+##     National Institute of Biostructures             National Institute of Child 
+##                                       1                                       2 
+##     National Institute of Environmental           National Institute of General 
+##                                       3                                       1 
+##            National Institute of Public        National Institute of Technology 
+##                                       1                                       1 
+##        Nordic Institute of Chiropractic      Prophylactic Institute of Southern 
+##                                       1                                       2 
+##               Research Institute of New      Research Institute of Tuberculosis 
+##                                       4                                       2 
+##       Swiss Institute of Bioinformatics             the Institute of Biomedical 
+##                                       1                                       1 
+##               the Institute of Medicine                   University of Alberta 
+##                                       1                                       2 
+##                   University of Applied                   University of Arizona 
+##                                       3                                       5 
+##                  University of Arkansas                     University of Basel 
+##                                      25                                       8 
+##                     University of Benin                  University of Botswana 
+##                                       1                                       1 
+##                  University of Bradford                   University of Bristol 
+##                                       1                                       4 
+##                   University of British                   University of Calgary 
+##                                       4                                      23 
+##                University of California                  University of Campinas 
+##                                      78                                       3 
+##                   University of Chicago                   University of Chinese 
+##                                      13                                       1 
+##                University of Cincinnati                  University of Colorado 
+##                                      11                                       5 
+##               University of Connecticut                University of Copenhagen 
+##                                       3                                       8 
+##                   University of Córdoba                    University of Dayton 
+##                                       1                                       1 
+##                 University of Education                    University of Exeter 
+##                                       1                                       1 
+##                   University of Florida                   University of Georgia 
+##                                       9                                       2 
+##                     University of Ghana                   University of Granada 
+##                                       1                                       2 
+##                     University of Haifa                     University of Hawai 
+##                                       1                                     281 
+##                    University of Hawaii                    University of Hawaiï 
+##                                     358                                       2 
+##                    University of Hawaìi                    University of Health 
+##                                       1                                      11 
+##                      University of Hong                  University of Honolulu 
+##                                       3                                       6 
+##                  University of Illinois               University of Information 
+##                                       6                                       2 
+##                      University of Iowa                      University of Juiz 
+##                                       4                                       4 
+##                    University of Kansas                  University of Kentucky 
+##                                       4                                       1 
+##                     University of Korea                  University of Lausanne 
+##                                       1                                       1 
+##                     University of Leeds                University of Louisville 
+##                                       2                                       1 
+##                     University of Maine                    University of Malaya 
+##                                       2                                       2 
+##                  University of Maryland             University of Massachusetts 
+##                                      13                                      22 
+##                   University of Medical                  University of Medicine 
+##                                       2                                       4 
+##                 University of Melbourne                     University of Miami 
+##                                       1                                       3 
+##                  University of Michigan                     University of Minas 
+##                                       8                                       1 
+##                 University of Minnesota                  University of Missouri 
+##                                       1                                       2 
+##                   University of Montana                     University of Mount 
+##                                       3                                       1 
+##                    University of Murcia                  University of Nebraska 
+##                                       1                                       5 
+##                    University of Nevada                       University of New 
+##                                       3                                      14 
+##                     University of North                      University of Ohio 
+##                                       9                                       1 
+##                   University of Ontario                      University of Oslo 
+##                                       1                                       6 
+##                    University of Oxford                   University of Palermo 
+##                                       9                                       1 
+##                     University of Paris              University of Pennsylvania 
+##                                       1                                      68 
+##                University of Pittsburgh                     University of Porto 
+##                                      13                                       3 
+##                    University of Puerto                University of Queensland 
+##                                       3                                       2 
+##                     University of Rhode                  University of Richmond 
+##                                       3                                       1 
+##                       University of Rio                 University of Rochester 
+##                                       1                                       4 
+##                       University of Sao                       University of São 
+##                                       2                                       4 
+##                   University of Science                   University of Sergipe 
+##                                      34                                       1 
+##                 University of Singapore                     University of South 
+##                                       1                                       4 
+##                  University of Southern                    University of Sydney 
+##                                      24                                       1 
+##                University of Technology                     University of Texas 
+##                                       5                                      10 
+##                       University of the              University of Thessalonica 
+##                                     166                                       1 
+##                   University of Toronto                    University of Toulon 
+##                                      15                                       1 
+##                  University of Tübingen                      University of Utah 
+##                                       7                                      10 
+##                University of Washington                      University of West 
+##                                       9                                       1 
+##                   University of Western                 University of Wisconsin 
+##                                       1                                       9 
+##                   University of Wyoming                      University of York 
+##                                       1                                       1</code></pre>
+<pre class="r"><code>schools_and_deps &lt;- str_extract_all(
+  publications_txt,
+  &quot;School of\\s+[[:alpha:]]+|Department of\\s+[[:alpha:]]+&quot;
+  )
+schools_and_deps = unlist(schools_and_deps)
+table(schools_and_deps)</code></pre>
+<pre><code>## schools_and_deps
+##              Department of Ageing         Department of Agriculture 
+##                                 1                                 2 
+##             Department of Anatomy          Department of Anesthesia 
+##                                20                                 3 
+##       Department of Anesthesilogy      Department of Anesthesiology 
+##                                 1                                15 
+##        Department of Anthropology             Department of Applied 
+##                                 3                                 4 
+##         Department of Atmospheric          Department of Behavioral 
+##                                 3                                 3 
+##        Department of Biochemistry          Department of Biological 
+##                                 1                                12 
+##             Department of Biology          Department of Biomedical 
+##                                30                                 3 
+##         Department of Biosciences       Department of Biostatistics 
+##                                 4                                22 
+##              Department of Botany          Department of Cardiology 
+##                                 1                                 1 
+##      Department of Cardiovascular                Department of Cell 
+##                                 1                                 4 
+##           Department of Chemistry               Department of Civil 
+##                                 2                                13 
+##            Department of Clinical            Department of Commerce 
+##                                11                                 1 
+##       Department of Communication       Department of Communicology 
+##                                 2                                 2 
+##           Department of Community       Department of Computational 
+##                                 4                                 1 
+##            Department of Critical Department of Cyberinfrastructure 
+##                                15                                 1 
+##             Department of Defense           Department of Dentistry 
+##                                 7                                 1 
+##         Department of Dermatology             Department of Ecology 
+##                                27                                 4 
+##           Department of Economics           Department of Education 
+##                                16                                 8 
+##           Department of Emergency              Department of Energy 
+##                                16                                 1 
+##             Department of English       Department of Environmental 
+##                                 2                                10 
+##        Department of Epidemiology        Department of Experimental 
+##                                26                                 1 
+##              Department of Family                Department of Fish 
+##                                17                                 1 
+##           Department of Fisheries            Department of Forestry 
+##                                 1                                 6 
+##             Department of General             Department of Genetic 
+##                                 7                                 1 
+##           Department of Geography         Department of Geosciences 
+##                                 8                                 4 
+##           Department of Geriatric              Department of Health 
+##                                 1                                93 
+##          Department of Hematology               Department of Human 
+##                                 3                                 1 
+##          Department of Immunology          Department of Infectious 
+##                                 1                                28 
+##         Department of Information              Department of Inland 
+##                                 2                                 1 
+##           Department of Intensive            Department of Internal 
+##                                 3                                86 
+##       Department of International         Department of Kinesiology 
+##                                 3                                 2 
+##          Department of Laboratory         Department of Mathematics 
+##                                 3                                18 
+##          Department of Mechanical             Department of Medical 
+##                                 8                                 8 
+##            Department of Medicine          Department of Metabolism 
+##                               186                                 1 
+##        Department of Microbiology           Department of Molecular 
+##                                10                                 2 
+##              Department of Native             Department of Natural 
+##                                 5                                13 
+##          Department of Nephrology        Department of Neurological 
+##                                 5                                12 
+##           Department of Neurology        Department of Neurosurgery 
+##                                 3                                 1 
+##             Department of Nursing           Department of Nutrition 
+##                                 1                                 7 
+##                  Department of OB          Department of Obstetrics 
+##                                 5                                20 
+##        Department of Occupational       Department of Ophthalmology 
+##                                 2                                 1 
+##          Department of Orthopedic      Department of Otolaryngology 
+##                                 5                                 4 
+##          Department of Paediatric       Department of Parliamentary 
+##                                 1                                 1 
+##           Department of Pathology           Department of Pediatric 
+##                                17                                 2 
+##          Department of Pediatrics      Department of Pharmaceutical 
+##                                42                                 1 
+##        Department of Pharmacology            Department of Pharmacy 
+##                                 2                                 2 
+##            Department of Physical          Department of Physiology 
+##                                 5                                15 
+##       Department of Physiotherapy               Department of Plant 
+##                                 1                                 1 
+##          Department of Population          Department of Prevention 
+##                                17                                 1 
+##          Department of Preventive          Department of Psychiatry 
+##                               129                                34 
+##          Department of Psychology              Department of Public 
+##                                 8                                11 
+##           Department of Pulmonary        Department of Quantitative 
+##                                 1                                26 
+##        Department of Radiotherapy      Department of Rehabilitation 
+##                                 1                                 6 
+##            Department of Research        Department of Rheumatology 
+##                                 5                                 7 
+##             Department of Smoking              Department of Social 
+##                                 8                                 6 
+##           Department of Sociology              Department of Sports 
+##                                 8                                 1 
+##          Department of Statistics             Department of Surgery 
+##                                 5                                40 
+##            Department of Taxation                 Department of the 
+##                                 1                                 1 
+##             Department of Traffic       Department of Translational 
+##                                 1                                 1 
+##            Department of Tropical                Department of Twin 
+##                                59                                 4 
+##             Department of Urology            Department of Veterans 
+##                                 1                                11 
+##          Department of Veterinary            Department of Wildlife 
+##                                 7                                 5 
+##             Department of Zoology               School of Aerospace 
+##                                 1                                 5 
+##             School of Agriculture                 School of Applied 
+##                                 1                                 1 
+##                 School of Aquatic              School of Biological 
+##                                 1                                 4 
+##              School of Biomedical                   School of Brown 
+##                                 3                                 2 
+##                School of Business                School of Chemical 
+##                                 4                                 1 
+##               School of Education              School of Electronic 
+##                                 2                                 1 
+##                  School of Energy             School of Engineering 
+##                                 2                                 1 
+##           School of Environmental            School of Epidemiology 
+##                                 2                                 6 
+##                  School of Forest                School of Forestry 
+##                                 1                                 4 
+##                  School of Health                 School of Hygiene 
+##                                14                                 1 
+##              School of Immunology                     School of Law 
+##                                 1                                 1 
+##                    School of Life                School of Medicine 
+##                                 3                               616 
+##                 School of Natural                 School of Nursing 
+##                                 4                                70 
+##                   School of Ocean                School of Pharmacy 
+##                                 1                                 1 
+##                School of Physical           School of Physiotherapy 
+##                                 6                                 1 
+##              School of Population                  School of Public 
+##                                 2                                96 
+##                School of Sciences                  School of Social 
+##                                 4                                55 
+##          School of Transportation              School of Veterinary 
+##                                 1                                 1</code></pre>
+</div>
+<div id="question-5-form-a-database" class="section level2">
+<h2>Question 5: Form a database</h2>
+<pre class="r"><code>pub_char_list &lt;- xml2::xml_children(publications)
+pub_char_list &lt;- sapply(pub_char_list, as.character)</code></pre>
+<p>Now, extract the abstract and article title for each one of the
+elements of pub_char_list</p>
+<pre class="r"><code>abstracts &lt;- str_extract(pub_char_list, &quot;&lt;Abstract&gt;[[:print:][:space:]]+&lt;/Abstract&gt;&quot;)
+abstracts[[1]]</code></pre>
+<pre><code>## [1] &quot;&lt;Abstract&gt;\n        &lt;AbstractText&gt;Educational technologies in veterinary medicine aim to train veterinarians faster and improve clinical outcomes. COVID-19 pandemic, shifted face-to-face teaching to online, thus, the need to provide effective education remotely was exacerbated. Among recent technology advances for veterinary medical education, extended reality (XR) is a promising teaching tool. This study aimed to develop a case resolution approach for radiographic anatomy studies using XR technology and assess students&#39; achievement of differential diagnostic skills. Learning objectives based on Bloom&#39;s taxonomy keywords were used to develop four clinical cases (3 dogs/1 cat) of spinal injuries utilizing CT scans and XR models and presented to 22 third-year veterinary medicine students. Quantitative assessment (ASMT) of 7 questions probing &#39;memorization&#39;, &#39;understanding and application&#39;, &#39;analysis&#39; and &#39;evaluation&#39; was given before and after contact with XR technology as well as qualitative feedback via a survey. Mean ASMT scores increased during case resolution (pre 51.6% (±37%)/post 60.1% (± 34%); p &amp;lt; 0.01), but without significant difference between cases (Kruskal-Wallis H = 2.18, NS). Learning objectives were examined for six questions (Q1-Q6) across cases (C1-4): Memorization improved sequentially (Q1, 2 8/8), while Understanding and Application (Q3,4) showed the greatest improvement (26.7%-76.9%). Evaluation and Analysis (Q5,6) was somewhat mixed, improving (5/8), no change (3/8) and declining (1/8).Positive student perceptions suggest that case studies&#39; online delivery was well received stimulating learning in diagnostic imaging and anatomy while developing visual-spatial skills that aid understanding cross-sectional images. Therefore, XR technology could be a useful approach to complement radiological instruction in veterinary medicine.&lt;/AbstractText&gt;\n        &lt;CopyrightInformation&gt;© 2022 Wiley-VCH GmbH.&lt;/CopyrightInformation&gt;\n      &lt;/Abstract&gt;&quot;</code></pre>
+<pre class="r"><code>abstracts &lt;- str_remove_all(abstracts, &quot;&lt;/?[[:alnum:]- =\&quot;]+&gt;&quot;) 
+abstracts[[1]]</code></pre>
+<pre><code>## [1] &quot;\n        Educational technologies in veterinary medicine aim to train veterinarians faster and improve clinical outcomes. COVID-19 pandemic, shifted face-to-face teaching to online, thus, the need to provide effective education remotely was exacerbated. Among recent technology advances for veterinary medical education, extended reality (XR) is a promising teaching tool. This study aimed to develop a case resolution approach for radiographic anatomy studies using XR technology and assess students&#39; achievement of differential diagnostic skills. Learning objectives based on Bloom&#39;s taxonomy keywords were used to develop four clinical cases (3 dogs/1 cat) of spinal injuries utilizing CT scans and XR models and presented to 22 third-year veterinary medicine students. Quantitative assessment (ASMT) of 7 questions probing &#39;memorization&#39;, &#39;understanding and application&#39;, &#39;analysis&#39; and &#39;evaluation&#39; was given before and after contact with XR technology as well as qualitative feedback via a survey. Mean ASMT scores increased during case resolution (pre 51.6% (±37%)/post 60.1% (± 34%); p &amp;lt; 0.01), but without significant difference between cases (Kruskal-Wallis H = 2.18, NS). Learning objectives were examined for six questions (Q1-Q6) across cases (C1-4): Memorization improved sequentially (Q1, 2 8/8), while Understanding and Application (Q3,4) showed the greatest improvement (26.7%-76.9%). Evaluation and Analysis (Q5,6) was somewhat mixed, improving (5/8), no change (3/8) and declining (1/8).Positive student perceptions suggest that case studies&#39; online delivery was well received stimulating learning in diagnostic imaging and anatomy while developing visual-spatial skills that aid understanding cross-sectional images. Therefore, XR technology could be a useful approach to complement radiological instruction in veterinary medicine.\n        © 2022 Wiley-VCH GmbH.\n      &quot;</code></pre>
+<pre class="r"><code>abstracts &lt;- str_replace_all(abstracts, &quot;[[:space:]]+&quot;,&quot; &quot;)
+abstracts[[1]]</code></pre>
+<pre><code>## [1] &quot; Educational technologies in veterinary medicine aim to train veterinarians faster and improve clinical outcomes. COVID-19 pandemic, shifted face-to-face teaching to online, thus, the need to provide effective education remotely was exacerbated. Among recent technology advances for veterinary medical education, extended reality (XR) is a promising teaching tool. This study aimed to develop a case resolution approach for radiographic anatomy studies using XR technology and assess students&#39; achievement of differential diagnostic skills. Learning objectives based on Bloom&#39;s taxonomy keywords were used to develop four clinical cases (3 dogs/1 cat) of spinal injuries utilizing CT scans and XR models and presented to 22 third-year veterinary medicine students. Quantitative assessment (ASMT) of 7 questions probing &#39;memorization&#39;, &#39;understanding and application&#39;, &#39;analysis&#39; and &#39;evaluation&#39; was given before and after contact with XR technology as well as qualitative feedback via a survey. Mean ASMT scores increased during case resolution (pre 51.6% (±37%)/post 60.1% (± 34%); p &amp;lt; 0.01), but without significant difference between cases (Kruskal-Wallis H = 2.18, NS). Learning objectives were examined for six questions (Q1-Q6) across cases (C1-4): Memorization improved sequentially (Q1, 2 8/8), while Understanding and Application (Q3,4) showed the greatest improvement (26.7%-76.9%). Evaluation and Analysis (Q5,6) was somewhat mixed, improving (5/8), no change (3/8) and declining (1/8).Positive student perceptions suggest that case studies&#39; online delivery was well received stimulating learning in diagnostic imaging and anatomy while developing visual-spatial skills that aid understanding cross-sectional images. Therefore, XR technology could be a useful approach to complement radiological instruction in veterinary medicine. © 2022 Wiley-VCH GmbH. &quot;</code></pre>
+<p>Now get the titles:</p>
+<pre class="r"><code>titles &lt;- str_extract(pub_char_list, &quot;&lt;ArticleTitle&gt;[[:print:][:space:]]+&lt;/ArticleTitle&gt;&quot;)
+titles[[1]]</code></pre>
+<pre><code>## [1] &quot;&lt;ArticleTitle&gt;Extended reality veterinary medicine case studies for diagnostic veterinary imaging instruction: Assessing student perceptions and examination performance.&lt;/ArticleTitle&gt;&quot;</code></pre>
+<pre class="r"><code>titles &lt;- str_remove_all(titles, &quot;&lt;/?[[:alnum:]- =\&quot;]+&gt;&quot;)
+titles[[1]]</code></pre>
+<pre><code>## [1] &quot;Extended reality veterinary medicine case studies for diagnostic veterinary imaging instruction: Assessing student perceptions and examination performance.&quot;</code></pre>
+<p>Finally the dataset:</p>
+<pre class="r"><code>database &lt;- data.frame(
+  PubMedId = ids,
+  Title    = titles,
+  Abstract = abstracts
+)
+knitr::kable(database[1:8,], caption = &quot;Some papers about Covid19 and Hawaii&quot;)</code></pre>
+<table>
+<caption>Some papers about Covid19 and Hawaii</caption>
+<colgroup>
+<col width="0%" />
+<col width="4%" />
+<col width="94%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">PubMedId</th>
+<th align="left">Title</th>
+<th align="left">Abstract</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">36317584</td>
+<td align="left">Extended reality veterinary medicine case studies for
+diagnostic veterinary imaging instruction: Assessing student perceptions
+and examination performance.</td>
+<td align="left">Educational technologies in veterinary medicine aim to
+train veterinarians faster and improve clinical outcomes. COVID-19
+pandemic, shifted face-to-face teaching to online, thus, the need to
+provide effective education remotely was exacerbated. Among recent
+technology advances for veterinary medical education, extended reality
+(XR) is a promising teaching tool. This study aimed to develop a case
+resolution approach for radiographic anatomy studies using XR technology
+and assess students’ achievement of differential diagnostic skills.
+Learning objectives based on Bloom’s taxonomy keywords were used to
+develop four clinical cases (3 dogs/1 cat) of spinal injuries utilizing
+CT scans and XR models and presented to 22 third-year veterinary
+medicine students. Quantitative assessment (ASMT) of 7 questions probing
+‘memorization’, ‘understanding and application’, ‘analysis’ and
+‘evaluation’ was given before and after contact with XR technology as
+well as qualitative feedback via a survey. Mean ASMT scores increased
+during case resolution (pre 51.6% (±37%)/post 60.1% (± 34%); p &lt;
+0.01), but without significant difference between cases (Kruskal-Wallis
+H = 2.18, NS). Learning objectives were examined for six questions
+(Q1-Q6) across cases (C1-4): Memorization improved sequentially (Q1, 2
+8/8), while Understanding and Application (Q3,4) showed the greatest
+improvement (26.7%-76.9%). Evaluation and Analysis (Q5,6) was somewhat
+mixed, improving (5/8), no change (3/8) and declining (1/8).Positive
+student perceptions suggest that case studies’ online delivery was well
+received stimulating learning in diagnostic imaging and anatomy while
+developing visual-spatial skills that aid understanding cross-sectional
+images. Therefore, XR technology could be a useful approach to
+complement radiological instruction in veterinary medicine. © 2022
+Wiley-VCH GmbH.</td>
+</tr>
+<tr class="even">
+<td align="left">36299999</td>
+<td align="left">A history of the MetaSUB consortium: Tracking urban
+microbes around the globe.</td>
+<td align="left">The MetaSUB Consortium, founded in 2015, is a global
+consortium with an interdisciplinary team of clinicians, scientists,
+bioinformaticians, engineers, and designers, with members from more than
+100 countries across the globe. This network has continually collected
+samples from urban and rural sites including subways and transit
+systems, sewage systems, hospitals, and other environmental sampling.
+These collections have been ongoing since 2015 and have continued when
+possible, even throughout the COVID-19 pandemic. The consortium has
+optimized their workflow for the collection, isolation, and sequencing
+of DNA and RNA collected from these various sites and processing them
+for metagenomics analysis, including the identification of SARS-CoV-2
+and its variants. Here, the Consortium describes its foundations, and
+its ongoing work to expand on this network and to focus its scope on the
+mapping, annotation, and prediction of emerging pathogens, mapping
+microbial evolution and antibiotic resistance, and the discovery of
+novel organisms and biosynthetic gene clusters. © 2022 The Authors.</td>
+</tr>
+<tr class="odd">
+<td align="left">36284135</td>
+<td align="left">SUMMIT: An integrative approach for better
+transcriptomic data imputation improves causal gene identification.</td>
+<td align="left">Genes with moderate to low expression heritability may
+explain a large proportion of complex trait etiology, but such genes
+cannot be sufficiently captured in conventional transcriptome-wide
+association studies (TWASs), partly due to the relatively small
+available reference datasets for developing expression genetic
+prediction models to capture the moderate to low genetically regulated
+components of gene expression. Here, we introduce a method, the
+Summary-level Unified Method for Modeling Integrated Transcriptome
+(SUMMIT), to improve the expression prediction model accuracy and the
+power of TWAS by using a large expression quantitative trait loci (eQTL)
+summary-level dataset. We apply SUMMIT to the eQTL summary-level data
+provided by the eQTLGen consortium. Through simulation studies and
+analyses of genome-wide association study summary statistics for 24
+complex traits, we show that SUMMIT improves the accuracy of expression
+prediction in blood, successfully builds expression prediction models
+for genes with low expression heritability, and achieves higher
+statistical power than several benchmark methods. Finally, we conduct a
+case study of COVID-19 severity with SUMMIT and identify 11 likely
+causal genes associated with COVID-19 severity. © 2022. The
+Author(s).</td>
+</tr>
+<tr class="even">
+<td align="left">36279491</td>
+<td align="left">Pregnant Through the COVID-19 Chaos: Insights on How
+Women Use Information in the Perinatal Period During a Pandemic.</td>
+<td align="left"><AbstractText Label="PURPOSE/AIMS" NlmCategory="OBJECTIVE">To
+gain insights in how women use technology to address health information
+needs during the prenatal and postpartum time frame. An exploratory
+qualitative study recruited pregnant and recent postpartum women to
+share their perspectives on information they needed and how they
+obtained it. Women who were pregnant or &lt;90 days postpartum (n = 26)
+were recruited via social media and invited to share their experiences.
+Design thinking methodology was used to develop questions to understand
+information needs in the perinatal period as well as in context of the
+COVID-19 pandemic. Verbatim transcripts were coded by the research team
+according to Braun and Clarke’s reflexive thematic analysis. Five themes
+explain the experience of seeking information to support the perinatal
+period. Women explained the need for the following: (1) information and
+relationships are inseparable, (2) current practices leave needs unmet,
+(3) the pandemic exposes vulnerability in prenatal care, (4) left to
+figure it out alone, and (5) bridging the gap through technology.
+Aggregated findings suggest how usual care can be modified to improve
+support for women through personalized care, improved information
+support, and use of technology. The study findings inform innovative
+strategies using current technologies to improve health promotion in a
+dynamic health environment. Copyright © 2022 Wolters Kluwer Health,
+Inc. All rights reserved.</td>
+</tr>
+<tr class="odd">
+<td align="left">36265162</td>
+<td align="left">Substance Use From Social Distancing and Isolation By
+US Nativity During the Time of Covid-19: Cross-Sectional Study.</td>
+<td align="left">The Covid-19 pandemic had many unprecedented secondary
+outcomes resulting in various mental health issues leading to substance
+use coping behaviors. The extent of substance use changes in a US sample
+by nativity have not been previously described. Our aim was to design an
+online survey to assess the social distancing and isolation issues
+exacerbated by the Covid-19 pandemic to describe substance use as coping
+behaviors by comparing substance use changes prior to and during the
+pandemic. A comprehensive 116-item survey to understand the impact of
+Covid-19 and social distancing on physical and psychosocial mental
+health and chronic diseases was designed. Approximately 10,000 online
+surveys were distributed by Qualtrics LLC between 13 May 2021 and 09
+January 2022 across the US (i.e., continental US, Hawaii, Alaska, and
+territories) to adults 18 and older. We oversampled low income and rural
+adults among non-Hispanic White, non-Hispanic Black, Hispanic/Latino
+adults, and foreign-born participants. Of the 5,938 surveys returned,
+5,413 surveys were used after Qualtrics proprietary expert review fraud
+detection, and detailed assessments of completion rate and timing to
+complete the survey. Participant demographics, substance use coping
+behaviors, and substance use prior to and during the pandemic are
+described by the overall US resident sample, followed by US born and
+foreign-born self-report. Substance use included tobacco use,
+e-cigarettes/vaping, alcohol use, marijuana use, and other illicit
+substance use. Marginal homogeneity based on Stuart-Maxwell test was
+used to assess changes in self-reported substance use prior to and
+during the pandemic. The sample was mostly White (2182/5413, 40.3%),
+women (3369/5406, 62.3%) that identified as straight/heterosexual
+(4805/5406, 89.3%), reported making ≥$75,000 (1405/5355, 26.2%) and had
+vocational/technical training (1746/5404, 32.3%). Significant changes
+were found in alcohol use self-reports the overall sample. Significant
+changes were also observed among US born and foreign-born samples.
+Similarities were observed between US born and foreign-born participants
+on increased alcohol use from: (1) no alcohol use prior to the pandemic
+to using alcohol once to several times a month; and (2) once to several
+times per week to everyday to several times per day. While significant
+changes were observed from no prior alcohol use to some level of
+increased use, the inverse was observed as well and more pronounced
+among foreign-born participants. That is, there was a 5.1% overall
+change in some level of alcohol use prior to the pandemic to no alcohol
+use during the pandemic among foreign born, compared to the 4.3% change
+among US born. To better prepare for the inadvertent effects of public
+health policies meant to protect individuals, we must understand the
+mental health burdens that can precipitate into substance use coping
+mechanisms that not only have a deleterious effect on physical and
+mental health but exacerbate morbidity and mortality to disease like
+Covid-19.
+<AbstractText Label="CLINICALTRIAL" NlmCategory="BACKGROUND"></AbstractText></td>
+</tr>
+<tr class="even">
+<td align="left">36247032</td>
+<td align="left">COVID-19 Restriction Movement Control Order (MCO)
+Impacted Emissions of Peninsular Malaysia Using Sentinel-2a and
+Sentinel-5p Satellite.</td>
+<td align="left">The unprecedented outbreak of Coronavirus Disease 2019
+(COVID-19) has impacted the whole world in every aspect including
+health, social life, economic activity, education, and the environment.
+The pandemic has led to an improvement in air quality all around the
+world, including in Malaysia. Lockdowns have resulted in industry
+shutting down and road travel decreasing which can reduce the emission
+of Greenhouse Gases (GHG) and air pollution. This research assesses the
+impact of the COVID-19 lockdown on emissions using the Air Pollution
+Index (API), aerosols, and GHG which is Nitrogen Dioxide (NO2) in
+Malaysia. The data used is from Sentinel-5p and Sentinel-2A which
+monitor the air quality based on Ozone (O3) and NO2 concentration. Using
+an interpolated API Index Map comparing 2019, before the implementation
+of a Movement Control Order (MCO), and 2020, after the MCO period we
+examine the impact on pollution during and after the COVID-19 lockdown.
+Data used Sentinel-5p, Sentinel-2A, and Air Pollution Index of Malaysia
+(APIMS) to monitor the air quality that contains NO2 concentration. The
+result has shown the recovery in air quality during the MCO
+implementation which indirectly shows anthropogenic activities towards
+the environmental condition. The study will help to enhance and support
+the policy and scope for air pollution management strategies as well as
+raise public awareness of the main causes that contribute to air
+pollution. © King Abdulaziz University and Springer Nature Switzerland
+AG 2022, Springer Nature or its licensor holds exclusive rights to this
+article under a publishing agreement with the author(s) or other
+rightsholder(s); author self-archiving of the accepted manuscript
+version of this article is solely governed by the terms of such
+publishing agreement and applicable law.</td>
+</tr>
+<tr class="odd">
+<td align="left">36227851</td>
+<td align="left">Forgone Health Care for Non-COVID-19-Related Needs
+Among Medicare Beneficiaries During the COVID-19 Pandemic, Summer
+2020-Winter 2021.</td>
+<td align="left">Forgone health care, defined as not using health care
+despite perceiving a need for it, is associated with poor health
+outcomes, especially among people with chronic conditions. The objective
+of our study was to examine how the pandemic affected forgone health
+care during 3 stages of the pandemic. We used the Medicare Current
+Beneficiary Survey COVID-19 Rapid Response Questionnaire administered in
+summer 2020, fall 2020, and winter 2021 to examine sociodemographic
+characteristics, chronic diseases, COVID-19 vaccination status, and
+telehealth availability in relation to beneficiary reports of forgone
+health care. Of the 3 periods studied, the overall rate of forgone
+health care was highest in summer 2020 (20.8%), followed by fall 2020
+(7.8%) and winter 2021 (6.5%). COVID-19 vaccination status, age, sex,
+race and ethnicity, US region, availability of primary care telehealth
+appointments, and chronic conditions (heart disease, arthritis,
+depression, osteoporosis or a broken hip, and diabetes or high blood
+glucose) were significantly related to forgone care. High rates of
+forgone care among Medicare participants varied over time and were
+significantly related to beneficiary characteristics. Our findings
+highlight the need for health care reform and changes in policy to
+address the issue of access to care for people with chronic conditions
+during a pandemic or other public health emergency.</td>
+</tr>
+<tr class="even">
+<td align="left">36217024</td>
+<td align="left">Dynamic SARS-CoV-2 emergence algorithm for
+rationally-designed logical next-generation vaccines.</td>
+<td align="left">SARS-CoV-2 worldwide spread and evolution has resulted
+in variants containing mutations resulting in immune evasive epitopes
+that decrease vaccine efficacy. We acquired SARS-CoV-2 positive clinical
+samples and compared the worldwide emerged spike mutations from Variants
+of Concern/Interest, and developed an algorithm for monitoring the
+evolution of SARS-CoV-2 in the context of vaccines and monoclonal
+antibodies. The algorithm partitions logarithmic-transformed prevalence
+data monthly and Pearson’s correlation determines exponential emergence
+of amino acid substitutions (AAS) and lineages. The SARS-CoV-2 genome
+evaluation indicated 49 mutations, with 44 resulting in AAS. Nine of the
+ten most worldwide prevalent (&gt;70%) spike protein changes have
+Pearson’s coefficient r &gt; 0.9. The tenth, D614G, has a prevalence
+&gt;99% and r-value of 0.67. The resulting algorithm is based on the
+patterns these ten substitutions elucidated. The strong positive
+correlation of the emerged spike protein changes and algorithmic
+predictive value can be harnessed in designing vaccines with relevant
+immunogenic epitopes. Monitoring, next-generation vaccine design, and
+mAb clinical efficacy must keep up with SARS-CoV-2 evolution, as the
+virus is predicted to remain endemic. © 2022. The Author(s).</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 
