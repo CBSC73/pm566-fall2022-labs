@@ -5,9 +5,9 @@ date: "`r Sys.Date()`"
 output: github_document
 always_allow_html: true
 ---
-```
-{r setup, include=FALSE} 
+```{r setup, include=FALSE} 
 knitr::opts_chunk$set(echo = TRUE)
+options(repos = c(CRAN = "http//cran.rstudio.com"))
 ```
 
 ## R Markdown
@@ -55,7 +55,134 @@ ORDER by last_name, first_name")
 SELECT actor_id, first_name, last_name
 FROM actor
 ORDER by last_name, first_name
+LIMIT 15
 ```
+
+## Exercise 2.
+```{sql, connection=con}
+SELECT actor_id, first_name, last_name
+FROM actor
+WHERE last_name IN ('WILLIAMS', 'DAVIS')
+ORDER BY last_name
+```
+## Exercise 3. 
+
+```{r}
+dbGetQuery(con,"
+      PRAGMA table_info(rental)
+           "
+)
+```
+
+
+```{r}
+dbGetQuery(con,"
+SELECT DISTINCT customer_id, rental_date
+FROM  rental
+WHERE date(rental_date) = '2005-07-05'
+")
+```
+
+
+```{r}
+dbGetQuery(con,"
+SELECT customer_id, 
+     COUNT(*) AS N
+FROM  rental
+WHERE date(rental_date) = '2005-07-05'
+GROUP BY customer_id
+")
+```
+
+## Exercise 4.1 
+Construct a query that retrieves all rows from the payment table where the amount is either 1.99, 7.99, 9.99.
+
+```{r}
+dbGetQuery(con,"
+      PRAGMA table_info(payment)
+")
+```
+
+```{r}
+dbGetQuery(con,"
+SELECT *
+FROM payment
+WHERE amount IN (1.99, 7.99, 9.99)
+LIMIT 10
+  ")
+```
+
+## Exercise 4.2
+
+Construct a query that retrieves all rows from the payment table where the amount is greater than 5
+
+```{r}
+dbGetQuery(con,"
+SELECT *
+FROM payment
+WHERE amount > 5
+LIMIT 10
+")
+```
+
+## Exercise 4.2, second part --Greater than 5 and less than 8
+
+```{r}
+dbGetQuery(con,"
+SELECT *
+FROM payment
+WHERE amount > 5   AND amount < 8
+LIMIT 10
+")
+```
+## Exercise 5. Retrive all the payment IDs and their amount from the customers whose last name is ‘DAVIS’.
+
+```{r}
+dbGetQuery(con,"
+SELECT *
+FROM customer AS c INNER JOIN payment AS p
+ON c.customer_id = p.customer_id
+WHERE c.last_name=='DAVIS'
+/* WHERE c.last_name == 'DAVIS' */ /* This is a comment */
+")
+```
+
+## Exercise 6. Use COUNT(*) to count the number of rows in rental
+
+```{r}
+dbGetQuery(con,"
+SELECT COUNT(*)
+FROM rental")
+```
+## Exercise 6.2 - Use COUNT(*) and GROUP BY to count the number of rentals for each customer_id
+```{r}
+dbGetQuery(con,"
+SELECT customer_ID, COUNT(*) as count
+FROM rental
+GROUP BY customer_id")
+```
+
+## Exercise 6.3 - Repeat the previous query and sort by the count in descending order
+```{r}
+dbGetQuery(con,"
+SELECT customer_ID, COUNT(*) as count
+FROM rental
+GROUP BY customer_id
+ORDER BY count DESC")
+```
+
+## Exercise 6.4 - Repeat the previous query but use HAVING to only keep the groups with 40 or more.
+```{r}
+dbGetQuery(con,"
+SELECT customer_ID, COUNT(*) as count
+FROM rental
+GROUP BY customer_id
+HAVING count >= 40
+ORDER BY count DESC
+LIMIT 8
+")
+```
+
 ```{r}
 # clean up
 dbDisconnect(con)
