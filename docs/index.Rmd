@@ -128,6 +128,6 @@ database <- data.frame(
   Title    = titles,
   Abstract = abstracts
 )
-knitr::kable(database[1:8,], caption = "Some papers about Covid19 and Hawaii")
+knitr::kable(database[1:8,], caption = "Some Papers About Covid19 and Hawaii")
 ```
 
