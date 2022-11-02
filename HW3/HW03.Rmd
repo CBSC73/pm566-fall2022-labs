@@ -158,4 +158,105 @@ database <- data.frame(
 knitr::kable(database[1:10,], caption = "Covid-19 Vaccine Trials Papers")
 ```
 
+## Part 2: Text mining
+
+```{r}
+#Obtain dataset, save to computer then load in (unable to load directly from website without issues)
+
+library(tidytext)
+pubmedabs <- read.csv("C:\\Users\\clair\\Desktop\\PM566\\pubmed.csv")
+str(pubmedabs)
+```
+
+```{r}
+library(forcats)
+
+```
+### Step 1: Tokenize the abstracts and count the number of each token
+```{r}
+#Count number of tokens
+pubmedabs %>%
+  unnest_tokens(word, abstract) %>%
+  count(word, sort = TRUE)
+```
+
+```{r}
+#Look at top tokens 
+pubmedabs %>%
+  unnest_tokens(word, abstract) %>%
+  #anti_join(stop_words, by = c("word")) %>%
+  count(word, sort = TRUE)  %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, fct_reorder(word, n))) +
+  geom_col()
+```
+### _Here are the top 20 words in the abstracts. "COVID" and "19" are at the top of the list, thus likely articles about COVID are the most common abstracts. "Cancer" and "prostate" are also on the list and most likely the second most common articles after COVID._ 
+
+```{r}
+#Remove stop words
+pubmedabs %>%
+  unnest_tokens(word, abstract) %>%
+  count(word, sort = TRUE) %>%
+  anti_join(stop_words, by = c("word")) %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, fct_reorder(word, n))) +
+  geom_col()
+
+```
+### _Removing stop words DOES change what tokens appear as the most frequent, and now the results are more illuminating. COVID is at the top so most likely these are the most numerous articles. Then prostate cancer second. Pre-eclampsia is now on the list so that may be the third most common article subject. The terms "women" and "pregnancy" are probably high becuase these are article about pre-eclampsia which is a pregnancy disorder._
+
+```{r}
+#Top 5 words table 
+
+top5 <- 
+    pubmedabs %>%
+  unnest_tokens(word, abstract) %>%
+  count(word, sort = TRUE) %>% 
+  anti_join(stop_words, by = c("word")) 
+
+top5<- top5[1:5,]
+
+top5 %>%
+    arrange(desc(n)) %>%
+knitr::kable(caption = "Top 5 Words", align=c("l", "c"))
+
+```
+
+### Step 2: Tokenize the abstracts into bigrams. Find the 10 most common bigrams and visualize them with ggplot2.
+```{r}
+pubmedabs %>%
+  unnest_ngrams(bigram, abstract, n=2) %>%
+  count(bigram, sort = TRUE) %>%
+  top_n(10, n) %>%
+  ggplot(aes(n, fct_reorder(bigram, n))) +
+  geom_col()+
+  labs(title="Top Ten Most Common Two Word Terms")
+
+```
+
+### _ Figure showing the top ten most common two word terms ("bigrams") in the abstracts. Covid-19 is likely the most common abstract subject, followed by prostate cancer and pre-eclampsia._
+
+### Step 3: Calculate the TF-IDF value for each word-search term combination. (here you want the search term to be the “document”) What are the 5 tokens from each search term with the highest TF-IDF value? How are the results different from the answers you got in question 1?
+```{r}
+#Check number of terms in the dataset to confirm 
+search_term <- 
+    pubmedabs %>%
+    count(term)
+
+search_term %>%
+    arrange(desc(n)) %>%
+knitr::kable()
+```
+
+```{r, include=False}
+pubmedabs %>%
+  group_by(term) %>% 
+  unnest_tokens(word, abstract) %>%
+  count(word, sort = TRUE) %>%
+  bind_tf_idf(word, term, n)
+
+
+```
+
+
 
