@@ -9,6 +9,7 @@ always_allow_html: true
 
 ```{r setup, include=FALSE} 
 knitr::opts_chunk$set(echo = TRUE)
+options(repos = c(CRAN = "http://cran.rstudio.com"))
 ```
 
 ## R Markdown
@@ -28,8 +29,9 @@ library(stringr)
 ## Part 1: APIs 
 
 ```{r}
+
 # Downloading the website
-website <- xml2::read_html("https://pubmed.ncbi.nlm.nih.gov/?term=sars-cov-2%20trial%20vaccine")
+website <- xml2::read_html("https://pubmed.ncbi.nlm.nih.gov/?term=sars-cov-2+trial+vaccine")
 
 # Finding the counts
 
@@ -41,7 +43,7 @@ counts
 # Extracting the data using regex
 stringr::str_extract(counts, "[0-9,]+")
 ```
-### _There are 3,997 results from this search_
+### _There are 4,006 results from this search_
 
 ### Create database
 ```{r}
@@ -114,6 +116,9 @@ abstracts[[1]]
 abstracts <- str_replace_all(abstracts, "[[:space:]]+"," ")
 abstracts[[1]]
 
+#trim string to first 150 characters
+abstractshort<-substring(abstracts, 1, 150)
+
 ```
 ```{r, get publication year}
 pubyear <- str_extract(pub_char_list, "<Year>[0-9]{4}</Year>")
@@ -136,7 +141,7 @@ pubday[[1]]
 pubday <- str_remove_all(pubday, "</?[[:alnum:]- =\"]+>")
 pubday[[1]]
 ```
-### Make a table with the dataset information 
+### Make a dataset containing all the elements  
 
 ```{r}
 
@@ -146,8 +151,9 @@ pubdate[[1]]
   
 ```
 ```{r}
-#Create table with all elements
-database <- data.frame(
+#Create dataframe with all elements
+
+database1 <- data.frame(
   PubMedId = ids,
   Title    = titles,
   Abstract = abstracts,
@@ -155,10 +161,24 @@ database <- data.frame(
   Publication_Date=pubdate
   
 )
-knitr::kable(database[1:10,], caption = "Covid-19 Vaccine Trials Papers")
 ```
 
-## Part 2: Text mining
+### Make a table showing results (first five displayed)
+```{r}
+#Show first five results in a table, will use shortened abstract created above so its not such a big table 
+database2 <- data.frame(
+  PubMedId = ids,
+  Title    = titles,
+  Abstract = abstractshort,
+  Journal =journalname,
+  Publication_Date=pubdate
+  
+)
+
+knitr::kable(database2[1:5,], caption = "Covid-19 Vaccine Trials Papers: First 5 results", valign = "top")
+```
+
+# Part 2: Text mining
 
 ```{r}
 #Obtain dataset, save to computer then load in (unable to load directly from website without issues)
@@ -172,59 +192,68 @@ str(pubmedabs)
 library(forcats)
 
 ```
-### Step 1: Tokenize the abstracts and count the number of each token
 ```{r}
-#Count number of tokens
-pubmedabs %>%
+#Check number of terms in the dataset to confirm all five appear
+search_term <- 
+    pubmedabs %>%
+    count(term)
+
+search_term %>%
+    arrange(desc(n)) %>%
+knitr::kable()
+```
+
+## Section 1
+### Step 1 - Tokenize the abstracts and count the number of each token
+```{r}
+top20all <-pubmedabs %>%
   unnest_tokens(word, abstract) %>%
-  count(word, sort = TRUE) %>% 
-  top_n(10, n)
+  count(word, sort = TRUE) 
+
+
+top20all<- top20all[1:20,]
+
+top20all %>%
+    arrange(desc(n)) %>%
+knitr::kable(caption = "Table 1. Top 20 Words from All Abstracts", align=c("l", "c"))
   
 ```
 
-```{r}
-#Look at top tokens 
-pubmedabs %>%
-  unnest_tokens(word, abstract) %>%
-  #anti_join(stop_words, by = c("word")) %>%
-  count(word, sort = TRUE)  %>%
-  top_n(20, n) %>%
-  ggplot(aes(n, fct_reorder(word, n))) +
-  geom_col()
-```
-### _Figure showing the top 20 words in the abstracts. "COVID" and "19" are at the top of the list, thus likely articles about COVID are the most common abstracts. "Cancer" and "prostate" are also on the list and most likely the second most common articles after COVID._ 
+### _Table 1 shows the most common words amongst all the abstrcts in the dataset. The most common words are stop words like "the" and "of." But on the top list is "COVID" and "19" as well as "cancer" and "prostate" so articles about COVID-19 are likely most common amongst the abstracts, followed by prostate cancer articles._
 
+
+### Step 2 - Tokenize the abstracts and count the number of each token after removing stop words
 ```{r}
-#Remove stop words
-pubmedabs %>%
+#Look at top tokens with Stop Words removed
+top20nostop <-pubmedabs %>%
   unnest_tokens(word, abstract) %>%
-  count(word, sort = TRUE) %>%
   anti_join(stop_words, by = c("word")) %>%
-  top_n(20, n) %>%
-  ggplot(aes(n, fct_reorder(word, n))) +
-  geom_col()
+  count(word, sort = TRUE)
 
+
+top20nostop<- top20nostop[1:20,]
+
+top20nostop %>%
+    arrange(desc(n)) %>%
+knitr::kable(caption = "Table 2. Top 20 Words from All Abstracts, Stop Words Removed", align=c("l", "c"))
 ```
-### _Figure showing the top 20 words AFTER removing stop words. This DOES change what tokens appear as the most frequent, and now the results are more illuminating. COVID is at the top so most likely these are the most numerous articles. Then prostate cancer second. Pre-eclampsia is now on the list so that may be the third most common article subject. The terms "women" and "pregnancy" are probably high becuase these are article about pre-eclampsia which is a pregnancy disorder._
+
+### _Table 2 shows the most common words among all the abstracts with stop words REMOVED. This DOES change what tokens appear as the most frequent, and now the results are more illuminating.Now the most common words are  "COVID" and "19" with "cancer" and "prostate" coming next. Then "eclampsia" and "preeclampsia" with related words like "pregnancy" appear in the list now too, thus articles about pre-eclampsia are probably third most numerous after COVID and prostate cancer._
 
 ```{r}
-#Top 5 words table 
-
-top5 <- 
-    pubmedabs %>%
+pubmedabs %>%
   unnest_tokens(word, abstract) %>%
+  anti_join(stop_words, by = c("word")) %>%
   count(word, sort = TRUE) %>% 
-  anti_join(stop_words, by = c("word")) 
-
-top5<- top5[1:5,]
-
-top5 %>%
-    arrange(desc(n)) %>%
-knitr::kable(caption = "Table - Top 5 Words", align=c("l", "c"))
-
+  top_n(20, n) %>%
+  ggplot(aes(n, fct_reorder(word, n))) +
+  geom_col()+
+    labs(title="Figure 1. Top 20 Most Common Words for all abstracts, no Stop Words")
 ```
+### _Figure 1 gives a visual of the data from Table 2, showing the top 20 words in the abstracts with NO stop words. We can see how dramatic the difference is between COVID-19 related words versus words from other abstracts. There are twice as many COVID related words than prostate cancer, and around three times more than preeclampsia._ 
 
-### Examine Top 5 words BY search term after removing stop words
+
+### Step 3 - Examine Top 5 words BY search term after removing stop words
 ```{r}
 top5byterm <- 
     pubmedabs %>%
@@ -236,13 +265,13 @@ top5byterm <-
 top5byterm %>%
     top_n(5,n) %>% 
     arrange(desc(term)) %>%
-knitr::kable(caption = "Table - Top 5 Words by Search Term", align=c("l", "c","c"))
+knitr::kable(caption = "Table 3. Top 5 Words by Search Term with Stop Words Removed", align=c("l", "c","c"))
 ```
 
-### _Table showing the top 5 terms from each search term abstract. We can see that the top terms are very different depending on the original search term. We get more words that are more specific to that particular topic._
+### _Table 3 shows the top 5 words from abstracts each of the five search terms. We can see that the top terms are very different depending on the original search term. We get more words that are more specific to that particular topic._
 
 
-## Step 2: Tokenize the abstracts into bigrams. Find the 10 most common bigrams and visualize them with ggplot2.
+## Section 2 - Tokenize the abstracts into bigrams. Find the 10 most common bigrams and visualize them with ggplot2.
 ```{r}
 pubmedabs %>%
   unnest_ngrams(bigram, abstract, n=2) %>%
@@ -250,23 +279,13 @@ pubmedabs %>%
   top_n(10, n) %>%
   ggplot(aes(n, fct_reorder(bigram, n))) +
   geom_col()+
-  labs(title="Top Ten Most Common Two Word Terms")
+  labs(title="Figure 2. Top Ten Most Common Bigrams (Two Word Terms)")
 
 ```
 
-### _ Figure showing the top ten most common two word terms ("bigrams") in the abstracts. Covid-19 is likely the most common abstract subject, followed by prostate cancer and pre-eclampsia._
+### _Figure 2 shows the top ten most common bigrams (two word terms) in the abstracts. Covid-19 remains by far the most common abstract subject, followed by prostate cancer and then pre-eclampsia._
 
-### Step 3: Calculate the TF-IDF value for each word-search term combination. (here you want the search term to be the “document”) What are the 5 tokens from each search term with the highest TF-IDF value? How are the results different from the answers you got in question 1?
-```{r}
-#Check number of terms in the dataset to confirm 
-search_term <- 
-    pubmedabs %>%
-    count(term)
-
-search_term %>%
-    arrange(desc(n)) %>%
-knitr::kable()
-```
+### Section 3 - Calculate the TF-IDF value for each word-search term combination. What are the 5 tokens from each search term with the highest TF-IDF value? How are the results different from the answers you got in Question 1?
 
 ```{r}
 term_table <-pubmedabs %>%
@@ -280,12 +299,13 @@ term_table <-pubmedabs %>%
 term_table %>%
     top_n(5,tf_idf) %>% 
     arrange(desc(term)) %>%
-knitr::kable(digits =4, align=c("l", "c", "c", "c","c","c"), caption = "Table - Top 5 TF-IDFs by Search Term")
+knitr::kable(digits =4, align=c("l", "c", "c", "c","c","c"), caption = "Table 4. Top 5 TF-IDFs by Search Term")
 
 ```
 
-### Table showing the highest TD-IDF values for each of the five search terms.
-### _Comparing the information in this table to the top tokens from Question 1, 
+### Table 4 shows the highest TF-IDF values for each of the five search terms. The TF-IDF value shows the most relevant terms for each of the abstract searches. It also corrects for the fact there are many more articles about COVID than than are for the other subjects so its possible to see which tokens are most important in each search."
+
+### _Comparing the information in this table to the top tokens from Question 1, this table shows much more interesting information because it speaks to what the articles are actually about for that search term. For instance, for cystic fibrosis abstracts "CFTR" comes up which is the gene that is abnormal in this condition. "Sweat" also comes up which is a clinical test for cystic fibrosis, thus many of the abstracts are probably focusing on genetic and clinical diagnostic tests for the condition. Prostate cancer is also really interesting because prostatectomy and castration now show up which are treatments to resect/cure the cancer so most likely there are a lot of abstracts about prostate cancer treatments in this dataset._
 
 
 
