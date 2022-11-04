@@ -1,0 +1,146 @@
+---
+title: "Lab 09"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Playing with examples from Lecture Slides 
+#Create the cluster
+library(parallel)
+cl <-makePSOCKcluster(4)
+x<- 20
+
+#Prepare the cluster
+clusterSetRNGStream(cl, 123)
+ #same as "set.seed(123)"
+clusterExport(cl, "x")
+clusterEvalQ(cl, {paste0("Hello from process #", Sys.getpid(), ". I see x and it is equal to  ", x)})
+
+#Stop cluster 
+stopCluster(cl)
+```
+
+
+### Problem 2
+```{r}
+set.seed(1235)
+fun1 <- function(n = 100, k = 4, lambda = 4) {
+  x <- NULL
+  
+  for (i in 1:n)
+    x <- rbind(x, rpois(k, lambda))
+  
+  return(x)
+}
+f1 <- fun1(100,4)
+mean(f1)
+```
+
+```{r}
+fun1alt <- function(n = 100, k = 4, lambda = 4) {
+  # YOUR CODE HERE
+  
+  x <- matrix( rpois(n*k, lambda) , ncol = 4)
+  
+  return(x)
+}
+f1 <- fun1alt(50000,4)
+
+
+# Benchmarking
+microbenchmark::microbenchmark(
+  fun1(),
+  fun1alt()
+)
+
+```
+```{r}
+ d <- matrix(1:16, ncol=4)
+print(d)
+
+```
+###Problem 2, find max
+```{r, find the column max}
+set.seed(1234)
+M <- matrix(runif(12), ncol=4)
+M
+
+#Find each column max value, the 2 is the margin argument which tells R to apply that function to each COLUMN, where a 1 means apply to each row
+fun2 <- function(x) {
+  apply(x, 2, max)}
+fun2(x=M)
+
+fun2alt <- function(x) {
+  # YOUR CODE HERE
+   idx <- max.col( t(x))
+   x[cbind(idx,1:4)]
+}
+fun2alt(x=M)
+x <- matrix(rnorm(1e4), nrow=10)
+```
+```{r}
+# Benchmarking
+microbenchmark::microbenchmark(
+  fun2(x),
+  fun2alt(x)
+)
+```
+
+### Problem 3, Parallelize everything
+```{r}
+my_boot <- function(d, stat, R, ncpus = 1L) {
+  
+  # Getting the random indices
+  n <- nrow(dat)
+  idx <- matrix(sample.int(n, n*R, TRUE), nrow=n, ncol=R)
+  #Step 1
+  cl <-makePSOCKcluster(4)
+  clusterSetRNGStream(cl, 123)
+  #Step 2
+  clusterExport(cl, c("stat", "dat", "idx"), envir=environment())
+  #Step 3 replaces with parLapply
+ 
+   ans <- parLapply(cl, seq_len(R), function(i) {
+    stat(dat[idx[,i], , drop=FALSE])
+  })
+  
+  # Coercing the list into a matrix
+  ans <- do.call(rbind, ans)
+  ans}
+```
+
+### 1. Use the previous pseudocode, and make it work with parallel. Here is just an example for you to try.
+```{r}
+my_stat <- function(d) coef(lm(y~x, data=d))
+set.seed(1)
+n<-500; R<-1e4
+
+x<-cbind(rnorm(n)); y<-x*5 + rnorm(n)
+
+ans0<- confint(lm(y~x))
+set.seed(1)
+dat <-data.frame(x,y)
+ans1<- my_boot(dat, my_stat, R=R, ncpus = 2L)
+```
+```{r}
+t(apply(ans0, 2, quantile, c(.025,.975)))
+```
+```{r}
+t(apply(ans1, 2, quantile, c(.025,.975)))
+```
+
+### Check whether your version actually goes faster than the non-parallel version:
+```{r}
+system.time(my_boot(dat, my_stat, R = 4000, ncpus = 1L))
+```
+```{r}
+system.time(my_boot(dat, my_stat, R = 4000, ncpus = 2L))
+```
+
