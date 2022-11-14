@@ -1,0 +1,111 @@
+---
+title: "Homework 4"
+author: "CB"
+date: "`r Sys.Date()`"
+output: github_document
+link-citations: yes
+editor_options: 
+  chunk_output_type: console
+always_allow_html: true
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+options(repos = c(CRAN = "http://cran.rstudio.com"))
+```
+
+
+
+## HPC
+### Problem 1: Make sure your code is nice
+
+#### Create a matrix with a set seed
+```{r}
+set.seed(2315)
+dat <- matrix(rnorm(200 * 100), nrow = 200)
+```
+#### Find total row sums
+```{r}
+fun1 <- function(dat) {
+  n <- nrow(dat)
+  ans <- double(n) 
+  for (i in 1:n) {
+    ans[i] <- sum(dat[i, ])
+  }
+  ans
+}
+```
+#### Alternative code to run faster
+```{r}
+fun1alt <-function(dat) {
+  x <- rowSums(dat)
+  return(x)
+}
+```
+
+#### Find cumulative row sums
+
+```{r}
+# Cumulative sum by row
+fun2 <- function(dat) {
+  n <- nrow(dat)
+  k <- ncol(dat)
+  ans <- dat
+  for (i in 1:n) {
+    for (j in 2:k) {
+      ans[i,j] <- dat[i, j] + ans[i, j - 1]
+    }
+  }
+  ans
+}
+```
+
+#### Alternative code to run faster
+```{r}
+install.packages("matrixStats")
+library(matrixStats)
+
+fun2alt <-function(dat) {
+  x <- rowCumsums(dat)
+  return(x)
+}
+```
+
+### Benchmarking
+#### Test for the first
+```{r}
+microbenchmark::microbenchmark(
+  fun1(dat),
+  fun1alt(dat), check = "equivalent"
+)
+```
+
+#### Test for the second
+```{r}
+microbenchmark::microbenchmark(
+  fun2(dat),
+  fun2alt(dat), check = "equivalent"
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+## SQL
+
+```{r}
+if (!require(RSQLite)) install.packages(c("RSQLite"))
+if (!require(DBI))     install.packages(c("DBI"))
+library(RSQLite)
+library(DBI)
+```
+
+### Question 1.
+
