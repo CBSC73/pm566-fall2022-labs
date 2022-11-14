@@ -33,9 +33,8 @@ library(knitr)
 library(plotly)
 library(widgetframe)
 ```
-# Lab 11
 
-### Load both datasets in
+### Load both datasets 
 ```{r}
 
 # load COVID state-level data from NYT
@@ -209,6 +208,278 @@ cv_states_today %>%
           type = 'scatter', mode = 'markers', color = ~state,
           size = ~population, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5))
 ```
+```{r}
+# filter out "District of Columbia"
+cv_states_today_filter <- cv_states_today %>% filter(state!="District of Columbia")
+
+# pop_density vs. cases after filtering
+cv_states_today_filter %>% 
+  plot_ly(x = ~pop_density, y = ~cases, 
+          type = 'scatter', mode = 'markers', color = ~state,
+          size = ~population, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5))
+```
+```{r}
+# pop_density vs. deathsper100k
+cv_states_today_filter %>% 
+  plot_ly(x = ~pop_density, y = ~deathsper100k,
+          type = 'scatter', mode = 'markers', color = ~state,
+          size = ~population, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5))
+
+```
+```{r}
+
+# Adding hoverinfo
+cv_states_today_filter %>% 
+  plot_ly(x = ~pop_density, y = ~deathsper100k,
+          type = 'scatter', mode = 'markers', color = ~state,
+          size = ~population, sizes = c(5, 70), marker = list(sizemode='diameter', opacity=0.5),
+          hoverinfo = 'text',
+          text = ~paste( paste(state, ":", sep=""), 
+                paste(" Cases per 100k: ", per100k, sep="") , 
+                paste(" Deaths per 100k: ", deathsper100k, sep=""), sep = "<br>")) %>%
+  layout(title = "Population-normalized COVID-19 deaths (per 100k) vs. population density for US states",
+        yaxis = list(title = "Deaths per 100k"), 
+         xaxis = list(title = "Population Density"),
+         hovermode = "compare")
+```
+
+
+### 7. Explore scatterplot trend interactively using `ggplotly()` and `geom_smooth()`
+
+- For `pop_density` vs. `newdeathsper100k` create a chart with the same variables using `gglot_ly()`
+- Explore the pattern between $x$ and $y$ using `geom_smooth()`
+  - Explain what you see. Do you think `pop_density` is a correlate of `newdeathsper100k`?
+
+```{r}
+### FINISH CODE HERE
+p <- ggplot(cv_states_today_filter, aes(x=pop_density, y=deathsper100k, size=population)) + geom_point() + geom_smooth()
+ggplotly(p)
+```
+### _There is perhaps a weak correlation between at higher population densities (from 750 to 1250 there is an upward linear appearing trend). However I doubt this correlation is very strong. The difference in new deaths per 100K is only 100/100,000 or 0.1% different between a population density near 0 and the highest measured, 1250. 
+
+
+### 8. Multiple line chart
+
+- Create a line chart of the `naive_CFR` for all states over time using `plot_ly()`
+  - Use the zoom and pan tools to inspect the `naive_CFR` for the states that had an increase in September. How have they changed over time?
+- Create one more line chart, for Florida only, which shows `new_cases` and `new_deaths` together in one plot. Hint: use `add_layer()`
+  - Use hoverinfo to "eyeball" the approximate peak of deaths and peak of cases. What is the time delay between the peak of cases and the peak of deaths?
+  
+
+```{r}
+
+# Line chart for naive_CFR for all states over time using `plot_ly()`
+plot_ly(cv_states, x = ~date, y = ~naive_CFR, color = ~state, type = "scatter", mode = "lines")
+
+# I looked for states that had increases in Sept.. really don't see any.
+
+
+# Line chart for Florida showing new_cases and new_deaths together
+cv_states %>% filter(state=="Florida") %>% plot_ly(x = ~date, y = ~new_cases, type = "scatter", mode = "lines") %>% 
+  add_lines(x = ~date, y = ~new_deaths, type = "scatter", mode = "lines") 
+```
+
+
+### 9. Heatmaps
+
+Create a heatmap to visualize `new_cases` for each state on each date greater than June 1st, 2021
+- Start by mapping selected features in the dataframe into a matrix using the **tidyr** package function `pivot_wider()`, naming the rows and columns, as done in the lecture notes
+- Use `plot_ly()` to create a heatmap out of this matrix. Which states stand out?
+- Repeat with `newper100k` variable. Now which states stand out? 
+- Create a second heatmap in which the pattern of `new_cases` for each state over time becomes more clear by filtering to only look at dates every two weeks 
+
+```{r }
+# Map state, date, and new_cases to a matrix
+library(tidyr)
+cv_states_mat <- cv_states %>% select(state, date, new_cases) %>% dplyr::filter(date>as.Date("2022-06-15"))
+cv_states_mat2 <- as.data.frame(pivot_wider(cv_states_mat, names_from = state, values_from = new_cases))
+rownames(cv_states_mat2) <- cv_states_mat2$date
+cv_states_mat2$date <- NULL
+cv_states_mat2 <- as.matrix(cv_states_mat2)
+```
+```{r}
+
+# Create a heatmap using plot_ly()
+plot_ly(x=colnames(cv_states_mat2), y=rownames(cv_states_mat2),
+             z=~cv_states_mat2,
+             type="heatmap",
+             showscale=T)
+
+```
+```{r}
+# Repeat with newper100k
+cv_states_mat <- cv_states %>% select(state, date, newper100k) %>% dplyr::filter(date>as.Date("2022-06-15"))
+cv_states_mat2 <- as.data.frame(pivot_wider(cv_states_mat, names_from = state, values_from = newper100k))
+rownames(cv_states_mat2) <- cv_states_mat2$date
+cv_states_mat2$date <- NULL
+cv_states_mat2 <- as.matrix(cv_states_mat2)
+
+
+plot_ly(x=colnames(cv_states_mat2), y=rownames(cv_states_mat2),
+             z=~cv_states_mat2,
+             type="heatmap",
+             showscale=T)
+```
+```{r}
+# Create a second heatmap after filtering to only include dates every other week
+filter_dates <- seq(as.Date("2022-06-15"), as.Date("2022-11-01"), by="2 weeks")
+
+cv_states_mat <- cv_states %>% select(state, date, newper100k) %>% filter(date %in% filter_dates)
+cv_states_mat2 <- as.data.frame(pivot_wider(cv_states_mat, names_from = state, values_from = newper100k))
+rownames(cv_states_mat2) <- cv_states_mat2$date
+cv_states_mat2$date <- NULL
+cv_states_mat2 <- as.matrix(cv_states_mat2)
+
+# Create a heatmap using plot_ly()
+plot_ly(x=colnames(cv_states_mat2), y=rownames(cv_states_mat2),
+             z=~cv_states_mat2,
+             type="heatmap",
+             showscale=T)
+
+```
+
+### 10. Map
+
+- Create a map to visualize the `naive_CFR` by state on October 15, 2021
+- Compare with a map visualizing the `naive_CFR` by state on most recent date
+- Plot the two maps together using `subplot()`. Make sure the shading is for the same range of values (google is your friend for this)
+- Describe the difference in the pattern of the CFR.
+
+```{r}
+### For specified date
+pick.date = "2022-10-15"
+
+# Extract the data for each state by its abbreviation
+cv_per100 <- cv_states %>% 
+  filter(date==pick.date) %>%
+  select(state, abb, newper100k, cases, deaths) 
+# select data
+cv_per100$state_name <- cv_per100$state
+cv_per100$state <- cv_per100$abb
+cv_per100$abb <- NULL
+
+
+# Create hover text
+cv_per100$hover <- with(cv_per100, 
+                        paste(state_name, '<br>', 
+                    "Cases per 100k: ", newper100k, '<br>',
+                    "Cases: ", cases, '<br>', 
+                    "Deaths: ", deaths))
+
+```
+```{r}
+# Set up mapping details
+set_map_details <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+
+
+# Make sure both maps are on the same color scale
+shadeLimit <- 35
+
+
+# Create the map
+fig <- plot_geo(cv_per100, locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~newper100k, 
+    text = ~hover, 
+    locations = ~state,
+    color = ~newper100k, 
+    colors = 'Purples'
+  )
+fig <- fig %>% 
+  colorbar(title = "Cases per 100k", limits = c(0,shadeLimit))
+
+fig <- fig %>% 
+  layout(
+    geo = set_map_details
+  )
+fig_pick.date <- fig
+
+
+```
+
+### Map for today's date
+```{r}
+# Extract the data for each state by its abbreviation
+cv_per100 <- cv_states_today %>%  
+  select(state, abb, newper100k, cases, deaths) 
+# select data
+cv_per100$state_name <- cv_per100$state
+cv_per100$state <- cv_per100$abb
+cv_per100$abb <- NULL
+
+# Create hover text
+cv_per100$hover <- with(cv_per100, 
+            paste(state_name, '<br>', 
+            "Cases per 100k: ", newper100k, '<br>',
+            "Cases: ", cases, '<br>', 
+            "Deaths: ", deaths))
+
+# Create the map
+fig <- plot_geo(cv_per100, locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~newper100k, 
+    text = ~hover, 
+    locations = ~state,
+    color = ~newper100k, 
+    colors = 'Purples'
+  )
+fig <- fig %>% 
+  colorbar(title = "Cases per 100k", limits = c(0,shadeLimit))
+fig <- fig %>% 
+  layout(
+    geo = set_map_details
+  )
+fig_Today <- fig
+fig_Today
+```
+
+
+```{r}
+### Plot together 
+finalfig <- subplot(fig_pick.date, fig_Today, nrows = 2) %>% 
+  layout(showlegend = FALSE,
+         title = paste('Cases per 100k by State', 
+                       '<br>(Hover for value)'),
+         hovermode = TRUE
+         ) %>%
+  colorbar(title = "Cases per 100k", limits = c(0,shadeLimit))
+annotations = list( 
+  list( 
+    x = 0.5,
+    y = 0.5,
+    text = pick.date,  
+    xref = "paper",  
+    yref = "paper",  
+    xanchor = "center",  
+    yanchor = "bottom",  
+    showarrow = FALSE   
+  ),  
+  list( 
+    x = 0.5,
+    y = -0.05,
+    text = Sys.Date(),  
+    xref = "paper",  
+    yref = "paper",  
+    xanchor = "center",  
+    yanchor = "bottom",  
+    showarrow = FALSE 
+  ))
+finalfig <- finalfig %>%layout(annotations = annotations) 
+finalfig
+```
+### _ Between Oct 15th, 2022 and Nov 14th, 2022 there has been a shift in the location of high cases per 100K. In October, Kentucky had the highest case rate. Now in November it is New Mexico. It appears that all the four corners states have more cases in Nov than they did in Oct. Some states however such as MOntana and Florida have a lower case rate in Nov than in Oct. In general New England region appears to have lower cases in Nov than they did in Oct._
+
+
+
+
+
+
+
 
 
 
